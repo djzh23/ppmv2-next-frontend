@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
-import type { EinsatzDetails } from "@/lib/types"
+import type { ShiftDetails } from "@/lib/types"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
 import { format } from "date-fns"
 import {
@@ -24,31 +24,31 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export default function FestmitarbeiterEinsatzDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function FestmitarbeiterShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
     <RoleGuard allowedRoles={["Festmitarbeiter"]}>
-      <FestmitarbeiterEinsatzDetailsContent einsatzId={id} />
+      <FestmitarbeiterShiftDetailsContent shiftId={id} />
     </RoleGuard>
   )
 }
 
-function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
+function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
-  const [einsatz, setEinsatz] = useState<EinsatzDetails | null>(null)
+  const [shift, setShift] = useState<ShiftDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isAccepting, setIsAccepting] = useState(false)
   const user = getAuthUser()
 
   useEffect(() => {
-    loadEinsatz()
-  }, [einsatzId])
+    loadShift()
+  }, [shiftId])
 
-  async function loadEinsatz() {
+  async function loadShift() {
     try {
-      const data = await apiGet<EinsatzDetails>(`/api/einsaetze/${einsatzId}`)
-      setEinsatz(data)
+      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
+      setShift(data)
     } catch (error) {
       // For development: silently fail
       console.warn("API not available:", error)
@@ -60,12 +60,12 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
   async function handleAccept() {
     setIsAccepting(true)
     try {
-      await apiPost(`/api/einsaetze/${einsatzId}/accept`)
+      await apiPost(`/api/shifts/${shiftId}/accept`)
       toast({
         title: "Einsatz accepted",
         description: "You have successfully accepted this Einsatz and taken responsibility",
       })
-      await loadEinsatz()
+      await loadShift()
       router.push("/festmitarbeiter/inbox")
     } catch (error) {
       // For development: silently fail
@@ -83,7 +83,7 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
     )
   }
 
-  if (!einsatz) {
+  if (!shift) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Einsatz not found</p>
@@ -92,8 +92,8 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
   }
 
   // Check if current user is the leader
-  const isLeader = einsatz.participants.some((p) => p.userId === user?.userId && p.role === 0)
-  const canAccept = isLeader && einsatz.status === "Planned"
+  const isLeader = shift.participants.some((p) => p.userId === user?.userId && p.role === 0)
+  const canAccept = isLeader && shift.status === "Planned"
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,12 +105,12 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
           </Button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold">{einsatz.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{einsatz.description}</p>
+              <h1 className="text-2xl font-bold">{shift.title}</h1>
+              <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
             </div>
             <div className="flex gap-2">
-              <StatusBadge status={einsatz.status} />
-              <ReadinessBadge readiness={einsatz.readiness} />
+              <StatusBadge status={shift.status} />
+              <ReadinessBadge readiness={shift.readiness} />
             </div>
           </div>
         </div>
@@ -127,14 +127,14 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Start</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(einsatz.startAtUtc), "PPpp")}</p>
+                  <p className="text-sm text-muted-foreground">{format(new Date(shift.startAtUtc), "PPpp")}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">End</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(einsatz.endAtUtc), "PPpp")}</p>
+                  <p className="text-sm text-muted-foreground">{format(new Date(shift.endAtUtc), "PPpp")}</p>
                 </div>
               </div>
             </CardContent>
@@ -148,9 +148,9 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{einsatz.location?.name || "Location not set"}</p>
-                  {einsatz.location?.address && (
-                    <p className="text-sm text-muted-foreground">{einsatz.location.address}</p>
+                  <p className="font-medium">{shift.location?.name || "Location not set"}</p>
+                  {shift.location?.address && (
+                    <p className="text-sm text-muted-foreground">{shift.location.address}</p>
                   )}
                 </div>
               </div>
@@ -160,11 +160,11 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
           <Card>
             <CardHeader>
               <CardTitle>Team</CardTitle>
-              <CardDescription>{einsatz.participants.length} participant(s)</CardDescription>
+              <CardDescription>{shift.participants.length} participant(s)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {einsatz.participants.map((participant, idx) => (
+                {shift.participants.map((participant, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-3 text-muted-foreground" />
@@ -184,7 +184,7 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
             </CardContent>
           </Card>
 
-          {einsatz.missingRequirements && einsatz.missingRequirements.length > 0 && (
+          {shift.missingRequirements && shift.missingRequirements.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-amber-600">Missing Requirements</CardTitle>
@@ -192,7 +192,7 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
               </CardHeader>
               <CardContent>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  {einsatz.missingRequirements.map((req, idx) => (
+                  {shift.missingRequirements.map((req, idx) => (
                     <li key={idx} className="text-muted-foreground">
                       {req}
                     </li>
@@ -229,11 +229,11 @@ function FestmitarbeiterEinsatzDetailsContent({ einsatzId }: { einsatzId: string
             </AlertDialog>
           )}
 
-          {einsatz.status === "Active" && isLeader && (
+          {shift.status === "Active" && isLeader && (
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  You have accepted this Einsatz and are the active leader
+                  You have accepted this Shift and are the active leader
                 </p>
               </CardContent>
             </Card>

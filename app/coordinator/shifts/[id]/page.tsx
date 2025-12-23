@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
-import type { EinsatzDetails } from "@/lib/types"
+import type { ShiftDetails } from "@/lib/types"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
 import { format } from "date-fns"
 import {
@@ -23,30 +23,30 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export default function EinsatzDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
     <RoleGuard allowedRoles={["Coordinator"]}>
-      <EinsatzDetailsContent einsatzId={id} />
+      <ShiftDetailsContent shiftId={id} />
     </RoleGuard>
   )
 }
 
-function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
+function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
-  const [einsatz, setEinsatz] = useState<EinsatzDetails | null>(null)
+  const [shift, setShift] = useState<ShiftDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isPublishing, setIsPublishing] = useState(false)
 
   useEffect(() => {
-    loadEinsatz()
-  }, [einsatzId])
+    loadShift()
+  }, [shiftId])
 
-  async function loadEinsatz() {
+  async function loadShift() {
     try {
-      const data = await apiGet<EinsatzDetails>(`/api/einsaetze/${einsatzId}`)
-      setEinsatz(data)
+      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
+      setShift(data)
     } catch (error) {
       toast({
         title: "Error loading Einsatz",
@@ -61,12 +61,12 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
   async function handlePublish() {
     setIsPublishing(true)
     try {
-      await apiPost(`/api/einsaetze/${einsatzId}/publish`)
+      await apiPost(`/api/shifts/${shiftId}/publish`)
       toast({
         title: "Einsatz published",
         description: "The Einsatz is now visible to the assigned leader",
       })
-      await loadEinsatz()
+      await loadShift()
     } catch (error) {
       toast({
         title: "Error publishing",
@@ -86,7 +86,7 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
     )
   }
 
-  if (!einsatz) {
+  if (!shift) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Einsatz not found</p>
@@ -94,7 +94,7 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
     )
   }
 
-  const leader = einsatz.participants.find((p) => p.role === 0)
+  const leader = shift.participants.find((p) => p.role === 0)
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,12 +106,12 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
           </Button>
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold">{einsatz.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{einsatz.description}</p>
+              <h1 className="text-2xl font-bold">{shift.title}</h1>
+              <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
             </div>
             <div className="flex gap-2">
-              <StatusBadge status={einsatz.status} />
-              <ReadinessBadge readiness={einsatz.readiness} />
+              <StatusBadge status={shift.status} />
+              <ReadinessBadge readiness={shift.readiness} />
             </div>
           </div>
         </div>
@@ -128,14 +128,14 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Start</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(einsatz.startAtUtc), "PPpp")}</p>
+                  <p className="text-sm text-muted-foreground">{format(new Date(shift.startAtUtc), "PPpp")}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">End</p>
-                  <p className="text-sm text-muted-foreground">{format(new Date(einsatz.endAtUtc), "PPpp")}</p>
+                  <p className="text-sm text-muted-foreground">{format(new Date(shift.endAtUtc), "PPpp")}</p>
                 </div>
               </div>
             </CardContent>
@@ -149,9 +149,9 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{einsatz.location?.name || "Location not set"}</p>
-                  {einsatz.location?.address && (
-                    <p className="text-sm text-muted-foreground">{einsatz.location.address}</p>
+                  <p className="font-medium">{shift.location?.name || "Location not set"}</p>
+                  {shift.location?.address && (
+                    <p className="text-sm text-muted-foreground">{shift.location.address}</p>
                   )}
                 </div>
               </div>
@@ -161,11 +161,11 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
           <Card>
             <CardHeader>
               <CardTitle>Team</CardTitle>
-              <CardDescription>{einsatz.participants.length} participant(s)</CardDescription>
+              <CardDescription>{shift.participants.length} participant(s)</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {einsatz.participants.map((participant, idx) => (
+                {shift.participants.map((participant, idx) => (
                   <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center">
                       <Users className="h-4 w-4 mr-3 text-muted-foreground" />
@@ -184,14 +184,14 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
             </CardContent>
           </Card>
 
-          {einsatz.missingRequirements && einsatz.missingRequirements.length > 0 && (
+          {shift.missingRequirements && shift.missingRequirements.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-amber-600">Missing Requirements</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="list-disc list-inside space-y-1 text-sm">
-                  {einsatz.missingRequirements.map((req, idx) => (
+                  {shift.missingRequirements.map((req, idx) => (
                     <li key={idx} className="text-muted-foreground">
                       {req}
                     </li>
@@ -201,7 +201,7 @@ function EinsatzDetailsContent({ einsatzId }: { einsatzId: string }) {
             </Card>
           )}
 
-          {einsatz.status === "Draft" && (
+          {shift.status === "Draft" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={isPublishing} className="w-full">
