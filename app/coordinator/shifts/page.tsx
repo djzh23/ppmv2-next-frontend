@@ -28,13 +28,13 @@ function CoordinatorShiftsContent() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    loadEinsaetze()
+    loadShifts()
   }, [])
 
-  async function loadEinsaetze() {
+  async function loadShifts() {
     try {
-      // TODO: Use query params when available: /api/einsaetze?status=Draft
-      const data = await apiGet<ShiftDetails[]>("/api/einsaetze")
+      // TODO: Use query params when available: /api/shifts?status=Draft
+      const data = await apiGet<ShiftDetails[]>("/api/shifts")
       setShifts(data)
     } catch (error) {
       // For development: silently fail and use empty data
@@ -58,9 +58,9 @@ function CoordinatorShiftsContent() {
             <p className="text-sm text-muted-foreground">Create and manage assignments</p>
           </div>
           <div className="flex gap-2">
-            <Button onClick={() => router.push("/coordinator/einsaetze/new")}>
+            <Button onClick={() => router.push("/coordinator/shifts/new")}>
               <Plus className="h-4 w-4 mr-2" />
-              New Einsatz
+              New Shift
             </Button>
             <Button variant="outline" onClick={logout}>
               Logout
@@ -94,9 +94,9 @@ function CoordinatorShiftsContent() {
                   <div className="text-center py-8">Loading...</div>
                 ) : draftShits.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <p>No draft Einsätze</p>
-                    <Button onClick={() => router.push("/coordinator/einsaetze/new")} className="mt-4">
-                      Create your first Einsatz
+                    <p>No draft Shifts</p>
+                    <Button onClick={() => router.push("/coordinator/shifts/new")} className="mt-4">
+                      Create your first Shift
                     </Button>
                   </div>
                 ) : (
@@ -105,7 +105,7 @@ function CoordinatorShiftsContent() {
                       <ShiftCard
                         key={einsatz.id}
                         shift={einsatz}
-                        onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
+                        onView={(id) => router.push(`/coordinator/shifts/${id}`)}
                       />
                     ))}
                   </div>
@@ -125,7 +125,7 @@ function CoordinatorShiftsContent() {
                       <ShiftCard
                         key={einsatz.id}
                         shift={einsatz}
-                        onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
+                        onView={(id) => router.push(`/coordinator/shifts/${id}`)}
                       />
                     ))}
                   </div>
@@ -141,11 +141,11 @@ function CoordinatorShiftsContent() {
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {activeShifts.map((einsatz) => (
+                    {activeShifts.map((shift) => (
                       <ShiftCard
-                        key={einsatz.id}
-                        shift={einsatz}
-                        onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
+                        key={shift.id}
+                        shift={shift}
+                        onView={(id) => router.push(`/coordinator/shifts/${id}`)}
                       />
                     ))}
                   </div>
