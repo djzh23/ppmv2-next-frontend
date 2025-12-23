@@ -42,7 +42,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+ 
+    <div>
+      <center>
+      <h1 className="text-2xl font-bold">Preview Branch</h1>
+      </center>
+          <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
+      
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Login</CardTitle>
@@ -86,5 +92,7 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+    </div>
+
   )
 }
