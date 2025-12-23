@@ -20,7 +20,7 @@ export default function HomePage() {
         router.push("/admin")
         break
       case "Coordinator":
-        router.push("/coordinator/einsaetze")
+        router.push("/coordinator/shifts")
         break
       case "Festmitarbeiter":
         router.push("/festmitarbeiter/inbox")

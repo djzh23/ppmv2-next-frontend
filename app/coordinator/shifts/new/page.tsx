@@ -14,19 +14,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiPost } from "@/lib/apiClient"
-import type { CreateEinsatzRequest } from "@/lib/types"
+import type { CreateShiftRequest } from "@/lib/types"
 import { ParticipantRole } from "@/lib/types"
 import { ArrowLeft } from "lucide-react"
 
-export default function NewEinsatzPage() {
+export default function NewShiftPage() {
   return (
     <RoleGuard allowedRoles={["Coordinator"]}>
-      <NewEinsatzContent />
+      <NewShiftContent />
     </RoleGuard>
   )
 }
 
-function NewEinsatzContent() {
+function NewShiftContent() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -58,7 +58,7 @@ function NewEinsatzContent() {
       const startAtUtc = new Date(`${startDate}T${startTime}`).toISOString()
       const endAtUtc = new Date(`${endDate}T${endTime}`).toISOString()
 
-      const payload: CreateEinsatzRequest = {
+      const payload: CreateShiftRequest = {
         title,
         description,
         startAtUtc,
@@ -72,10 +72,10 @@ function NewEinsatzContent() {
         ],
       }
 
-      const createdEinsatz = await apiPost<{ id: string }>("/api/einsaetze", payload)
+      const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
 
       if (shouldPublish && createdEinsatz.id) {
-        await apiPost(`/api/einsaetze/${createdEinsatz.id}/publish`)
+        await apiPost(`/api/shifts/${createdEinsatz.id}/publish`)
         toast({
           title: "Einsatz published",
           description: "The Einsatz has been created and published successfully",
@@ -87,7 +87,7 @@ function NewEinsatzContent() {
         })
       }
 
-      router.push("/coordinator/einsaetze")
+      router.push("/coordinator/shifts")
     } catch (error) {
       toast({
         title: "Error",

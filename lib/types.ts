@@ -36,13 +36,13 @@ export enum ParticipantRole {
   Support = 2,
 }
 
-export interface EinsatzParticipant {
+export interface ShiftParticipant {
   userId: string
   role: ParticipantRole
   user?: User
 }
 
-export interface EinsatzDetails {
+export interface ShiftDetails {
   id: string
   title: string
   description: string
@@ -50,13 +50,13 @@ export interface EinsatzDetails {
   endAtUtc: string
   locationId: string
   location?: Location
-  participants: EinsatzParticipant[]
+  participants: ShiftParticipant[]
   status: "Draft" | "Planned" | "Active"
   readiness?: "ready" | "not_ready"
   missingRequirements?: string[]
 }
 
-export interface CreateEinsatzRequest {
+export interface CreateShiftRequest {
   title: string
   description: string
   startAtUtc: string

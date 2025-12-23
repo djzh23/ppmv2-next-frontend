@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RoleGuard } from "@/components/role-guard"
-import { EinsatzCard } from "@/components/einsatz-card"
+import { ShiftCard } from "@/components/shift-card"
 import { apiGet } from "@/lib/apiClient"
-import type { EinsatzDetails } from "@/lib/types"
+import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -13,18 +13,18 @@ import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { logout } from "@/lib/auth"
 
-export default function CoordinatorEinsaetzePage() {
+export default function CoordinatorShiftsPage() {
   return (
     <RoleGuard allowedRoles={["Coordinator"]}>
-      <CoordinatorEinsaetzeContent />
+      <CoordinatorShiftsContent />
     </RoleGuard>
   )
 }
 
-function CoordinatorEinsaetzeContent() {
+function CoordinatorShiftsContent() {
   const router = useRouter()
   const { toast } = useToast()
-  const [einsaetze, setEinsaetze] = useState<EinsatzDetails[]>([])
+  const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -34,20 +34,20 @@ function CoordinatorEinsaetzeContent() {
   async function loadEinsaetze() {
     try {
       // TODO: Use query params when available: /api/einsaetze?status=Draft
-      const data = await apiGet<EinsatzDetails[]>("/api/einsaetze")
-      setEinsaetze(data)
+      const data = await apiGet<ShiftDetails[]>("/api/einsaetze")
+      setShifts(data)
     } catch (error) {
       // For development: silently fail and use empty data
       console.warn("API not available, using empty data:", error)
-      setEinsaetze([])
+      setShifts([])
     } finally {
       setIsLoading(false)
     }
   }
 
-  const draftEinsaetze = einsaetze.filter((e) => e.status === "Draft")
-  const plannedEinsaetze = einsaetze.filter((e) => e.status === "Planned")
-  const activeEinsaetze = einsaetze.filter((e) => e.status === "Active")
+  const draftShits = shifts.filter((e) => e.status === "Draft")
+  const plannedShifts = shifts.filter((e) => e.status === "Planned")
+  const activeShifts = shifts.filter((e) => e.status === "Active")
 
   return (
     <div className="min-h-screen bg-background">
@@ -79,20 +79,20 @@ function CoordinatorEinsaetzeContent() {
             <Tabs defaultValue="draft" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="draft">
-                  Draft {draftEinsaetze.length > 0 && `(${draftEinsaetze.length})`}
+                  Draft {draftShits.length > 0 && `(${draftShits.length})`}
                 </TabsTrigger>
                 <TabsTrigger value="planned">
-                  Planned {plannedEinsaetze.length > 0 && `(${plannedEinsaetze.length})`}
+                  Planned {plannedShifts.length > 0 && `(${plannedShifts.length})`}
                 </TabsTrigger>
                 <TabsTrigger value="active">
-                  Active {activeEinsaetze.length > 0 && `(${activeEinsaetze.length})`}
+                  Active {activeShifts.length > 0 && `(${activeShifts.length})`}
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="draft" className="mt-6">
                 {isLoading ? (
                   <div className="text-center py-8">Loading...</div>
-                ) : draftEinsaetze.length === 0 ? (
+                ) : draftShits.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No draft Einsätze</p>
                     <Button onClick={() => router.push("/coordinator/einsaetze/new")} className="mt-4">
@@ -101,10 +101,10 @@ function CoordinatorEinsaetzeContent() {
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {draftEinsaetze.map((einsatz) => (
-                      <EinsatzCard
+                    {draftShits.map((einsatz) => (
+                      <ShiftCard
                         key={einsatz.id}
-                        einsatz={einsatz}
+                        shift={einsatz}
                         onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
                       />
                     ))}
@@ -115,16 +115,16 @@ function CoordinatorEinsaetzeContent() {
               <TabsContent value="planned" className="mt-6">
                 {isLoading ? (
                   <div className="text-center py-8">Loading...</div>
-                ) : plannedEinsaetze.length === 0 ? (
+                ) : plannedShifts.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No planned Einsätze</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {plannedEinsaetze.map((einsatz) => (
-                      <EinsatzCard
+                    {plannedShifts.map((einsatz) => (
+                      <ShiftCard
                         key={einsatz.id}
-                        einsatz={einsatz}
+                        shift={einsatz}
                         onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
                       />
                     ))}
@@ -135,16 +135,16 @@ function CoordinatorEinsaetzeContent() {
               <TabsContent value="active" className="mt-6">
                 {isLoading ? (
                   <div className="text-center py-8">Loading...</div>
-                ) : activeEinsaetze.length === 0 ? (
+                ) : activeShifts.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No active Einsätze</p>
                   </div>
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {activeEinsaetze.map((einsatz) => (
-                      <EinsatzCard
+                    {activeShifts.map((einsatz) => (
+                      <ShiftCard
                         key={einsatz.id}
-                        einsatz={einsatz}
+                        shift={einsatz}
                         onView={(id) => router.push(`/coordinator/einsaetze/${id}`)}
                       />
                     ))}
