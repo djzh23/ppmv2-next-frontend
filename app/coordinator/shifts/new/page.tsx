@@ -72,10 +72,10 @@ function NewShiftContent() {
         ],
       }
 
-      const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
+      const createdEinsatz = await apiPost<{ id: string }>("/api/einsaetze", payload)
 
       if (shouldPublish && createdEinsatz.id) {
-        await apiPost(`/api/shifts/${createdEinsatz.id}/publish`)
+        await apiPost(`/api/einsaetze/${createdEinsatz.id}/publish`)
         toast({
           title: "Einsatz published",
           description: "The Einsatz has been created and published successfully",

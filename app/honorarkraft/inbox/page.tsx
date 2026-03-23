@@ -35,9 +35,9 @@ function HonorarkraftInboxContent() {
   async function loadShifts() {
     try {
       // TODO: Filter by assigned user when API supports it
-      const data = await apiGet<ShiftDetails[]>("/api/shifts")
+      const data = await apiGet<ShiftDetails[]>("/api/einsaetze")
       // Filter client-side for now - only show Shifts where current user is Leader
-      const myShifts = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === 0))
+      const myShifts = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === "Leader"))
       setShifts(myShifts)
     } catch (error) {
       // For development: silently fail and use empty data

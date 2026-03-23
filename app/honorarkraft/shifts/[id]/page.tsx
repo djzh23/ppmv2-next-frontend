@@ -47,7 +47,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
 
   async function loadShift() {
     try {
-      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
+      const data = await apiGet<ShiftDetails>(`/api/einsaetze/${shiftId}`)
       setShift(data)
     } catch (error) {
       // For development: silently fail
@@ -60,7 +60,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
   async function handleAccept() {
     setIsAccepting(true)
     try {
-      await apiPost(`/api/shifts/${shiftId}/accept`)
+      await apiPost(`/api/einsaetze/${shiftId}/accept`)
       toast({
         title: "Shift accepted",
         description: "You have successfully accepted this Shift and taken responsibility",
@@ -92,7 +92,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
   }
 
   // Check if current user is the leader
-  const isLeader = shift.participants.some((p) => p.userId === user?.userId && p.role === 0)
+  const isLeader = shift.participants.some((p) => p.userId === user?.userId && p.role === "Leader")
   const canAccept = isLeader && shift.status === "Planned"
 
   return (
@@ -149,8 +149,8 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{shift.location?.name || "Location not set"}</p>
-                  {shift.location?.address && (
-                    <p className="text-sm text-muted-foreground">{shift.location.address}</p>
+                  {shift.location?.district && (
+                    <p className="text-sm text-muted-foreground">{shift.location.district}</p>
                   )}
                 </div>
               </div>
@@ -174,7 +174,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
                           {participant.userId === user?.userId && " (You)"}
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <RoleBadge role={participant.role as 0 | 1 | 2} />
+                          <RoleBadge role={participant.role} />
                         </p>
                       </div>
                     </div>

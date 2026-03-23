@@ -45,7 +45,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
 
   async function loadShift() {
     try {
-      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
+      const data = await apiGet<ShiftDetails>(`/api/einsaetze/${shiftId}`)
       setShift(data)
     } catch (error) {
       toast({
@@ -61,7 +61,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   async function handlePublish() {
     setIsPublishing(true)
     try {
-      await apiPost(`/api/shifts/${shiftId}/publish`)
+      await apiPost(`/api/einsaetze/${shiftId}/publish`)
       toast({
         title: "Einsatz published",
         description: "The Einsatz is now visible to the assigned leader",
@@ -94,7 +94,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
     )
   }
 
-  const leader = shift.participants.find((p) => p.role === 0)
+  const leader = shift.participants.find((p) => p.role === "Leader")
 
   return (
     <div className="min-h-screen bg-background">
@@ -150,8 +150,8 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
                   <p className="font-medium">{shift.location?.name || "Location not set"}</p>
-                  {shift.location?.address && (
-                    <p className="text-sm text-muted-foreground">{shift.location.address}</p>
+                  {shift.location?.district && (
+                    <p className="text-sm text-muted-foreground">{shift.location.district}</p>
                   )}
                 </div>
               </div>
@@ -174,7 +174,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
                           {participant.user?.firstname} {participant.user?.lastname}
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
-                          <RoleBadge role={participant.role as 0 | 1 | 2} />
+                          <RoleBadge role={participant.role} />
                         </p>
                       </div>
                     </div>

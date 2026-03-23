@@ -21,20 +21,22 @@ export interface User {
   roleId?: number
 
   createdAt?: string
-  status?: "pending" | "approved" | "rejected"
+  status?: "Pending" | "Approved" | "Rejected" | "Deactivated"
 }
 
 export interface Location {
   id: string
   name: string
-  address?: string
+  district: string
 }
 
-export enum ParticipantRole {
-  Leader = 0,
-  Member = 1,
-  Support = 2,
-}
+export const ParticipantRole = {
+  Leader: "Leader",
+  Member: "Member",
+  Support: "Support",
+} as const
+
+export type ParticipantRole = (typeof ParticipantRole)[keyof typeof ParticipantRole]
 
 export interface ShiftParticipant {
   userId: string
@@ -51,7 +53,7 @@ export interface ShiftDetails {
   locationId: string
   location?: Location
   participants: ShiftParticipant[]
-  status: "Draft" | "Planned" | "Active"
+  status: "Draft" | "Planned" | "Active" | "Completed" | "Cancelled"
   readiness?: "ready" | "not_ready"
   missingRequirements?: string[]
 }
