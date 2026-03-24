@@ -2,6 +2,42 @@
 
 Ein modernes Next.js-Webfrontend zur Verwaltung von Einsätzen (Shifts) auf Basis einer .NET REST API. Das Frontend dient aktuell als Produkt- und Admin-UI und ist so aufgebaut, dass weitere Clients (z. B. .NET MAUI) später problemlos angebunden werden können.
 
+---
+
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="public/screenshots/Home-Login-ppm.png" alt="Login" width="100%" />
+      <sub><b>Login</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="public/screenshots/Admin-Dashboard-1-ppm.png" alt="Admin Dashboard" width="100%" />
+      <sub><b>Admin – Benutzerverwaltung</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="public/screenshots/Admin-Dashboard-2-ppm.png" alt="Admin Rollenübersicht" width="100%" />
+      <sub><b>Admin – Rollenübersicht</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="public/screenshots/coordinator-shifts.png" alt="Koordinator Einsätze" width="100%" />
+      <sub><b>Koordinator – Einsätze</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="public/screenshots/festmiatbeiter-shifts.png" alt="Festmitarbeiter Einsätze" width="100%" />
+      <sub><b>Festmitarbeiter – Einsätze</b></sub>
+    </td>
+    <td align="center"></td>
+  </tr>
+</table>
+
+---
+
 ## Funktionen
 
 - 🛡️ Rollenbasierter Zugriff (RBAC): Admin, Koordinator, Festmitarbeiter (Leader)
