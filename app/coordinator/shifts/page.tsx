@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RoleGuard } from "@/components/role-guard"
-import { EinsatzCard } from "@/components/einsatz-card"
+import { ShiftCard } from "@/components/shift-card"
 import { apiGet } from "@/lib/apiClient"
-import type { EinsatzDetails } from "@/lib/types"
+import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Card,
@@ -15,29 +15,30 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, LogOut, FileEdit, CalendarCheck, Zap } from "lucide-react"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
+import { Plus, FileEdit, CalendarCheck, Zap } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { logout } from "@/lib/auth"
 
-export default function CoordinatorEinsaetzePage() {
+export default function CoordinatorShiftsPage() {
   return (
     <RoleGuard allowedRoles={["Coordinator"]}>
-      <CoordinatorEinsaetzeContent />
+      <CoordinatorShiftsContent />
     </RoleGuard>
   )
 }
 
-function CoordinatorEinsaetzeContent() {
+function CoordinatorShiftsContent() {
   const router = useRouter()
   const { toast } = useToast()
-  const [einsaetze, setEinsaetze] = useState<EinsatzDetails[]>([])
+  const [einsaetze, setEinsaetze] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => { loadEinsaetze() }, [])
 
   async function loadEinsaetze() {
     try {
-      const data = await apiGet<EinsatzDetails[]>("/api/einsaetze")
+      const data = await apiGet<ShiftDetails[]>("/api/shifts")
       setEinsaetze(data)
     } catch (error) {
       console.warn("API not available:", error)
@@ -70,7 +71,7 @@ function CoordinatorEinsaetzeContent() {
       </p>
       {showCreate && (
         <Button
-          onClick={() => router.push("/coordinator/einsaetze/new")}
+          onClick={() => router.push("/coordinator/shifts/new")}
           size="sm"
         >
           Ersten Einsatz erstellen
@@ -80,83 +81,55 @@ function CoordinatorEinsaetzeContent() {
   )
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "hsl(var(--background))" }}>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", position: "relative", backgroundColor: "hsl(var(--background))", overflow: "hidden" }}>
+
+      {/* Grid-Hintergrund */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
 
       {/* Header */}
-      <header
-        style={{
-          borderBottom: "0.5px solid hsl(var(--border))",
-          backgroundColor: "hsl(var(--background))",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <div
-          className="container mx-auto px-6"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "56px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
-            <span
+      <DashboardHeader section="Koordinator" isLoading={isLoading} />
+
+      <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
+
+        {/* Seitenüberschrift */}
+        <div style={{ marginBottom: "2rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div>
+            <h1
               style={{
-                fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-                fontSize: "1.1rem",
-                fontWeight: 700,
+                fontSize: "1.5rem",
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 color: "hsl(var(--foreground))",
+                margin: 0,
               }}
             >
               Einsätze
-            </span>
-            <span style={{ fontSize: "0.75rem", color: "hsl(var(--muted-foreground))", letterSpacing: "0.05em" }}>
-              / Koordinator
-            </span>
+            </h1>
+            <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>
+              Einsätze erstellen, verwalten und veröffentlichen
+            </p>
           </div>
-          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-            <Button
-              size="sm"
-              onClick={() => router.push("/coordinator/einsaetze/new")}
-              style={{ gap: "0.4rem", fontSize: "0.8rem" }}
-            >
-              <Plus style={{ width: "14px", height: "14px" }} />
-              Neuer Einsatz
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={logout}
-              style={{ gap: "0.4rem", fontSize: "0.8rem" }}
-            >
-              <LogOut style={{ width: "14px", height: "14px" }} />
-              Abmelden
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-6 py-8">
-
-        {/* Seitenüberschrift */}
-        <div style={{ marginBottom: "2rem" }}>
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: "hsl(var(--foreground))",
-              margin: 0,
-            }}
+          <Button
+            size="sm"
+            onClick={() => router.push("/coordinator/shifts/new")}
+            style={{ gap: "0.4rem", fontSize: "0.8rem" }}
           >
-            Einsätze
-          </h1>
-          <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>
-            Einsätze erstellen, verwalten und veröffentlichen
-          </p>
+            <Plus style={{ width: "14px", height: "14px" }} />
+            Neuer Einsatz
+          </Button>
         </div>
 
         {/* Stat-Karten */}
@@ -236,7 +209,7 @@ function CoordinatorEinsaetzeContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {draftEinsaetze.map((e) => (
-                      <EinsatzCard key={e.id} einsatz={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
                     ))}
                   </div>
                 )}
@@ -250,7 +223,7 @@ function CoordinatorEinsaetzeContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {plannedEinsaetze.map((e) => (
-                      <EinsatzCard key={e.id} einsatz={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
                     ))}
                   </div>
                 )}
@@ -264,7 +237,7 @@ function CoordinatorEinsaetzeContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {activeEinsaetze.map((e) => (
-                      <EinsatzCard key={e.id} einsatz={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
                     ))}
                   </div>
                 )}
@@ -273,6 +246,8 @@ function CoordinatorEinsaetzeContent() {
           </CardContent>
         </Card>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }

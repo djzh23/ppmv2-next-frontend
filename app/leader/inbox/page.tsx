@@ -9,9 +9,8 @@ import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { useToast } from "@/hooks/use-toast"
-import { logout } from "@/lib/auth"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
 
 export default function LeaderInboxPage() {
   return (
@@ -52,20 +51,10 @@ function LeaderInboxContent() {
   const activeShifts = shifts.filter((e) => e.status === "Active")
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">My Inbox</h1>
-            <p className="text-sm text-muted-foreground">Review and accept your assigned Einsätze</p>
-          </div>
-          <Button variant="outline" onClick={logout}>
-            Logout
-          </Button>
-        </div>
-      </header>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "hsl(var(--background))" }}>
+      <DashboardHeader section="Leader" isLoading={isLoading} />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-6 py-8" style={{ flex: 1 }}>
         <Card>
           <CardHeader>
             <CardTitle>My Einsätze</CardTitle>
@@ -126,6 +115,8 @@ function LeaderInboxContent() {
           </CardContent>
         </Card>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }

@@ -125,7 +125,7 @@ export default function LoginPage() {
               display: "block",
             }}
           >
-            Einsätze
+            PPM - Play Pal Manager Für Verein
           </span>
           <span
             style={{

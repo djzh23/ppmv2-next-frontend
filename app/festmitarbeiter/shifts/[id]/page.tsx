@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
 import { format } from "date-fns"
 import {
@@ -77,16 +79,24 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Festmitarbeiter" isLoading />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
 
   if (!shift) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Einsatz not found</p>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Festmitarbeiter" />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "hsl(var(--muted-foreground))" }}>
+          Einsatz nicht gefunden
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
@@ -96,27 +106,53 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
   const canAccept = isLeader && shift.status === "Planned"
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.back()} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Inbox
-          </Button>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{shift.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
-            </div>
-            <div className="flex gap-2">
-              <StatusBadge status={shift.status} />
-              <ReadinessBadge readiness={shift.readiness} />
-            </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        backgroundColor: "hsl(var(--background))",
+        overflow: "hidden",
+      }}
+    >
+      {/* Grid-Hintergrund */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
+      <DashboardHeader section="Festmitarbeiter" isLoading={isLoading || isAccepting} />
+
+      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
+          <ArrowLeft className="h-4 w-4" />
+          Zurück zur Inbox
+        </Button>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
+              {shift.title}
+            </h1>
+            {shift.description && (
+              <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>{shift.description}</p>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <StatusBadge status={shift.status} />
+            <ReadinessBadge readiness={shift.readiness} />
           </div>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
             <CardHeader>
@@ -240,6 +276,8 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
           )}
         </div>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }

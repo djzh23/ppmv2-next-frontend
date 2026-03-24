@@ -18,7 +18,7 @@ export default function HomePage() {
         router.push("/admin")
         break
       case "Coordinator":
-        router.push("/coordinator/einsaetze")
+        router.push("/coordinator/shifts")
         break
       case "Festmitarbeiter":
         router.push("/festmitarbeiter/inbox")
@@ -82,7 +82,7 @@ export default function HomePage() {
               color: "hsl(var(--foreground))",
             }}
           >
-            Einsätze
+            PPM
           </span>
           <span
             style={{

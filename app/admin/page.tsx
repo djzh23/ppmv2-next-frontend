@@ -6,24 +6,18 @@ import { UserTable } from "@/components/user-table"
 import { apiGet, apiPut } from "@/lib/apiClient"
 import type { User } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { Button } from "@/components/ui/button"
-import { logout } from "@/lib/auth"
-import { Users, Clock, CheckCircle, XCircle, LogOut } from "lucide-react"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
+import { Users, Clock, CheckCircle, XCircle } from "lucide-react"
 
 const AdminEndpoints = {
-  pending: "/api/admin/users/pending",
-  approved: "/api/admin/users/approved",
-  rejected: "/api/admin/users/rejected",
-  approve: (id: string) => `/api/admin/users/approve/${id}`,
-  reject: (id: string) => `/api/admin/users/reject/${id}`,
+  pending:    "/api/admin/users/pending",
+  approved:   "/api/admin/users/approved",
+  rejected:   "/api/admin/users/rejected",
+  approve:    (id: string) => `/api/admin/users/approve/${id}`,
+  reject:     (id: string) => `/api/admin/users/reject/${id}`,
   assignRole: (id: string) => `/api/admin/users/${id}/role`,
 } as const
 
@@ -37,19 +31,16 @@ export default function AdminPage() {
 
 function AdminPageContent() {
   const { toast } = useToast()
-  const [pendingUsers, setPendingUsers] = useState<User[]>([])
+  const [pendingUsers,  setPendingUsers]  = useState<User[]>([])
   const [approvedUsers, setApprovedUsers] = useState<User[]>([])
   const [rejectedUsers, setRejectedUsers] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  const counts = useMemo(
-    () => ({
-      pending: pendingUsers.length,
-      approved: approvedUsers.length,
-      rejected: rejectedUsers.length,
-    }),
-    [pendingUsers.length, approvedUsers.length, rejectedUsers.length]
-  )
+  const counts = useMemo(() => ({
+    pending:  pendingUsers.length,
+    approved: approvedUsers.length,
+    rejected: rejectedUsers.length,
+  }), [pendingUsers.length, approvedUsers.length, rejectedUsers.length])
 
   const loadUsers = useCallback(async () => {
     setIsLoading(true)
@@ -59,19 +50,12 @@ function AdminPageContent() {
         apiGet<User[]>(AdminEndpoints.approved),
         apiGet<User[]>(AdminEndpoints.rejected),
       ])
-      setPendingUsers(pending ?? [])
+      setPendingUsers(pending  ?? [])
       setApprovedUsers(approved ?? [])
       setRejectedUsers(rejected ?? [])
     } catch (error) {
-      toast({
-        title: "Fehler beim Laden",
-        description:
-          error instanceof Error ? error.message : "Benutzer konnten nicht geladen werden",
-        variant: "destructive",
-      })
-    } finally {
-      setIsLoading(false)
-    }
+      toast({ title: "Fehler beim Laden", description: error instanceof Error ? error.message : "Unbekannter Fehler", variant: "destructive" })
+    } finally { setIsLoading(false) }
   }, [toast])
 
   useEffect(() => { loadUsers() }, [loadUsers])
@@ -80,7 +64,7 @@ function AdminPageContent() {
     setIsLoading(true)
     try {
       await apiPut(AdminEndpoints.approve(userId), {})
-      toast({ title: "Benutzer genehmigt", description: "Der Benutzer wurde erfolgreich genehmigt." })
+      toast({ title: "Benutzer genehmigt" })
       await loadUsers()
     } catch (error) {
       toast({ title: "Fehler", description: error instanceof Error ? error.message : "Fehler beim Genehmigen", variant: "destructive" })
@@ -110,167 +94,81 @@ function AdminPageContent() {
   }
 
   const statCards = [
-    {
-      label: "Gesamt",
-      value: counts.pending + counts.approved + counts.rejected,
-      icon: Users,
-      color: "hsl(var(--foreground))",
-      bg: "hsl(var(--secondary))",
-    },
-    {
-      label: "Ausstehend",
-      value: counts.pending,
-      icon: Clock,
-      color: "#b45309",
-      bg: "#fef9c3",
-    },
-    {
-      label: "Genehmigt",
-      value: counts.approved,
-      icon: CheckCircle,
-      color: "#166534",
-      bg: "#dcfce7",
-    },
-    {
-      label: "Abgelehnt",
-      value: counts.rejected,
-      icon: XCircle,
-      color: "#991b1b",
-      bg: "#fee2e2",
-    },
+    { label: "Gesamt",     value: counts.pending + counts.approved + counts.rejected, icon: Users,       accent: "#f1f5f9", iconColor: "#64748b" },
+    { label: "Ausstehend", value: counts.pending,  icon: Clock,        accent: "#fef9c3", iconColor: "#a16207" },
+    { label: "Genehmigt",  value: counts.approved, icon: CheckCircle,  accent: "#dcfce7", iconColor: "#15803d" },
+    { label: "Abgelehnt",  value: counts.rejected, icon: XCircle,      accent: "#fee2e2", iconColor: "#b91c1c" },
   ]
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "hsl(var(--background))" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        backgroundColor: "hsl(var(--background))",
+        overflow: "hidden",
+      }}
+    >
+      {/* ── Hintergrund-Grid ── */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
 
       {/* Header */}
-      <header
-        style={{
-          borderBottom: "0.5px solid hsl(var(--border))",
-          backgroundColor: "hsl(var(--background))",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
+      <DashboardHeader section="Admin" isLoading={isLoading} />
+
+      {/* Main */}
+      <main
+        className="container mx-auto px-6 py-8"
+        style={{ position: "relative", zIndex: 1, flex: 1 }}
       >
-        <div
-          className="container mx-auto px-6"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            height: "56px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", gap: "0.75rem" }}>
-            <span
-              style={{
-                fontFamily: "'Space Grotesk', 'Inter', sans-serif",
-                fontSize: "1.1rem",
-                fontWeight: 700,
-                letterSpacing: "-0.02em",
-                color: "hsl(var(--foreground))",
-              }}
-            >
-              Einsätze
-            </span>
-            <span
-              style={{
-                fontSize: "0.75rem",
-                color: "hsl(var(--muted-foreground))",
-                letterSpacing: "0.05em",
-              }}
-            >
-              / Admin
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            disabled={isLoading}
-            style={{ gap: "0.4rem", fontSize: "0.8rem" }}
-          >
-            <LogOut style={{ width: "14px", height: "14px" }} />
-            Abmelden
-          </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-6 py-8">
-
-        {/* Seitenüberschrift */}
+        {/* Seitenkopf */}
         <div style={{ marginBottom: "2rem" }}>
-          <h1
-            style={{
-              fontSize: "1.5rem",
-              fontWeight: 600,
-              letterSpacing: "-0.02em",
-              color: "hsl(var(--foreground))",
-              margin: 0,
-            }}
-          >
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
             Benutzerverwaltung
           </h1>
-          <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>
+          <p style={{ fontSize: "0.83rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>
             Registrierungen prüfen, Rollen zuweisen und Zugänge verwalten
           </p>
         </div>
 
         {/* Stat-Karten */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-            gap: "12px",
-            marginBottom: "2rem",
-          }}
-        >
-          {statCards.map(({ label, value, icon: Icon, color, bg }) => (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px", marginBottom: "2rem" }}>
+          {statCards.map(({ label, value, icon: Icon, accent, iconColor }) => (
             <div
               key={label}
               style={{
                 backgroundColor: "hsl(var(--card))",
                 border: "0.5px solid hsl(var(--border))",
                 borderRadius: "var(--radius)",
-                padding: "1rem 1.25rem",
+                padding: "1rem 1.1rem",
                 display: "flex",
                 alignItems: "center",
-                gap: "0.85rem",
+                gap: "0.9rem",
+                boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
               }}
             >
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "8px",
-                  backgroundColor: bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <Icon style={{ width: "16px", height: "16px", color }} />
+              <div style={{ width: "38px", height: "38px", borderRadius: "10px", backgroundColor: accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <Icon style={{ width: "17px", height: "17px", color: iconColor }} />
               </div>
               <div>
-                <div
-                  style={{
-                    fontSize: "1.4rem",
-                    fontWeight: 600,
-                    lineHeight: 1,
-                    color: "hsl(var(--foreground))",
-                  }}
-                >
+                <div style={{ fontSize: "1.5rem", fontWeight: 700, lineHeight: 1, color: "hsl(var(--foreground))", letterSpacing: "-0.02em" }}>
                   {value}
                 </div>
-                <div
-                  style={{
-                    fontSize: "0.75rem",
-                    color: "hsl(var(--muted-foreground))",
-                    marginTop: "2px",
-                  }}
-                >
+                <div style={{ fontSize: "0.72rem", color: "hsl(var(--muted-foreground))", marginTop: "3px", letterSpacing: "0.01em" }}>
                   {label}
                 </div>
               </div>
@@ -278,11 +176,11 @@ function AdminPageContent() {
           ))}
         </div>
 
-        {/* Tabs-Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Benutzerübersicht</CardTitle>
-            <CardDescription>
+        {/* Haupt-Card */}
+        <Card style={{ boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}>
+          <CardHeader style={{ paddingBottom: "1rem" }}>
+            <CardTitle style={{ fontSize: "1rem", fontWeight: 600 }}>Benutzerübersicht</CardTitle>
+            <CardDescription style={{ fontSize: "0.8rem" }}>
               Ausstehende Registrierungen bearbeiten und genehmigte Benutzer verwalten
             </CardDescription>
           </CardHeader>
@@ -299,34 +197,23 @@ function AdminPageContent() {
                   Abgelehnt{counts.rejected > 0 && ` (${counts.rejected})`}
                 </TabsTrigger>
               </TabsList>
-              <TabsContent value="pending" className="mt-6">
-                <UserTable
-                  users={pendingUsers}
-                  onApprove={handleApprove}
-                  onReject={handleReject}
-                  isLoading={isLoading}
-                />
+
+              <TabsContent value="pending" className="mt-5">
+                <UserTable users={pendingUsers} onApprove={handleApprove} onReject={handleReject} isLoading={isLoading} />
               </TabsContent>
-              <TabsContent value="approved" className="mt-6">
-                <UserTable
-                  users={approvedUsers}
-                  showActions={false}
-                  showRoleAssignment={true}
-                  onAssignRole={handleAssignRole}
-                  isLoading={isLoading}
-                />
+              <TabsContent value="approved" className="mt-5">
+                <UserTable users={approvedUsers} showActions={false} showRoleAssignment={true} onAssignRole={handleAssignRole} isLoading={isLoading} />
               </TabsContent>
-              <TabsContent value="rejected" className="mt-6">
-                <UserTable
-                  users={rejectedUsers}
-                  showActions={false}
-                  isLoading={isLoading}
-                />
+              <TabsContent value="rejected" className="mt-5">
+                <UserTable users={rejectedUsers} showActions={false} isLoading={isLoading} />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </main>
+
+      {/* Footer */}
+      <DashboardFooter />
     </div>
   )
 }
