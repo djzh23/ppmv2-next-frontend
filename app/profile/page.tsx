@@ -8,7 +8,6 @@ import { DashboardFooter } from "@/components/dashboard-footer"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { apiGet } from "@/lib/apiClient"
-import { getAuthUser } from "@/lib/auth"
 import type { UserProfile } from "@/lib/types"
 import { UserRoleBadge } from "@/components/user-role-badge"
 import { ArrowLeft, User } from "lucide-react"
@@ -25,24 +24,19 @@ function ProfileContent() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [endpointMissing, setEndpointMissing] = useState(false)
-
-  const authUser = getAuthUser()
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     loadProfile()
   }, [])
 
   async function loadProfile() {
+    setLoadError(null)
     try {
       const data = await apiGet<UserProfile>("/api/users/me")
       setProfile(data)
     } catch (error: unknown) {
-      // 404 means the endpoint isn't implemented yet on the backend
-      if (error && typeof error === "object" && "status" in error && (error as { status: number }).status === 404) {
-        setEndpointMissing(true)
-      }
-      // For any other error, endpointMissing stays false — the error UI will show
+      setLoadError(error instanceof Error ? error.message : "Profil konnte nicht geladen werden.")
     } finally {
       setIsLoading(false)
     }
@@ -119,35 +113,18 @@ function ProfileContent() {
           </p>
         </div>
 
-        {endpointMissing ? (
-          // Graceful fallback: show what's available from localStorage
+        {loadError ? (
           <Card>
-            <CardHeader>
-              <div
-                style={{
-                  width: "44px",
-                  height: "44px",
-                  borderRadius: "12px",
-                  backgroundColor: "hsl(var(--secondary))",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginBottom: "0.75rem",
-                }}
+            <CardContent className="pt-6" style={{ textAlign: "center" }}>
+              <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>
+                {loadError}
+              </p>
+              <button
+                onClick={loadProfile}
+                style={{ fontSize: "0.8rem", color: "hsl(var(--muted-foreground))", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
               >
-                <User style={{ width: "20px", height: "20px", color: "hsl(var(--muted-foreground))" }} />
-              </div>
-              <CardTitle style={{ fontSize: "1rem" }}>Kontodaten</CardTitle>
-              <CardDescription style={{ fontSize: "0.8rem" }}>
-                Vollständige Profildaten sind verfügbar sobald{" "}
-                <code style={{ fontSize: "0.75rem" }}>GET /api/users/me</code> im Backend implementiert ist.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                <ProfileField label="E-Mail" value={authUser?.email ?? ""} />
-                <ProfileField label="Rolle" value={authUser?.role ?? ""} />
-              </div>
+                Erneut versuchen
+              </button>
             </CardContent>
           </Card>
         ) : profile ? (
@@ -177,6 +154,7 @@ function ProfileContent() {
                 <ProfileField label="Vorname" value={profile.firstname} />
                 <ProfileField label="Nachname" value={profile.lastname} />
                 <ProfileField label="E-Mail" value={profile.email} />
+                <ProfileField label="Status" value={profile.status} />
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
                   <span
                     style={{
@@ -194,15 +172,7 @@ function ProfileContent() {
               </div>
             </CardContent>
           </Card>
-        ) : (
-          <Card>
-            <CardContent className="pt-6">
-              <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", textAlign: "center" }}>
-                Profildaten konnten nicht geladen werden.
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        ) : null}
       </main>
 
       <DashboardFooter />

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
-import { apiGet } from "@/lib/apiClient"
+import { apiGet, ApiError } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +25,7 @@ function LeaderInboxContent() {
   const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [listUnavailable, setListUnavailable] = useState(false)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -33,14 +34,17 @@ function LeaderInboxContent() {
 
   async function loadShifts() {
     setLoadError(null)
+    setListUnavailable(false)
     try {
-      // TODO: Filter by assigned user when API supports it
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
-      // Filter client-side for now - only show Shifts where current user is Leader
       const myShifts = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === "Leader"))
       setShifts(myShifts)
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      if (error instanceof ApiError && error.status === 404) {
+        setListUnavailable(true)
+      } else {
+        setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      }
       setShifts([])
     } finally {
       setIsLoading(false)
@@ -74,6 +78,13 @@ function LeaderInboxContent() {
               <TabsContent value="to-accept" className="mt-6">
                 {isLoading ? (
                   <div className="text-center py-8">Laden...</div>
+                ) : listUnavailable ? (
+                  <div style={{ textAlign: "center", padding: "3rem 1rem", color: "hsl(var(--muted-foreground))" }}>
+                    <p style={{ fontSize: "0.9rem" }}>Listenansicht noch nicht verfügbar</p>
+                    <p style={{ fontSize: "0.78rem", marginTop: "0.4rem" }}>
+                      <code>GET /api/shifts</code> ist im Backend noch nicht implementiert.
+                    </p>
+                  </div>
                 ) : loadError ? (
                   <div style={{ textAlign: "center", padding: "2rem" }}>
                     <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>
@@ -107,6 +118,13 @@ function LeaderInboxContent() {
               <TabsContent value="active" className="mt-6">
                 {isLoading ? (
                   <div className="text-center py-8">Laden...</div>
+                ) : listUnavailable ? (
+                  <div style={{ textAlign: "center", padding: "3rem 1rem", color: "hsl(var(--muted-foreground))" }}>
+                    <p style={{ fontSize: "0.9rem" }}>Listenansicht noch nicht verfügbar</p>
+                    <p style={{ fontSize: "0.78rem", marginTop: "0.4rem" }}>
+                      <code>GET /api/shifts</code> ist im Backend noch nicht implementiert.
+                    </p>
+                  </div>
                 ) : loadError ? (
                   <div style={{ textAlign: "center", padding: "2rem" }}>
                     <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>

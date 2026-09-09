@@ -6,7 +6,7 @@ import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
-import { apiGet } from "@/lib/apiClient"
+import { apiGet, ApiError } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -24,6 +24,7 @@ function HonorarkraftInboxContent() {
   const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [listUnavailable, setListUnavailable] = useState(false)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -32,16 +33,19 @@ function HonorarkraftInboxContent() {
 
   async function loadShifts() {
     setLoadError(null)
+    setListUnavailable(false)
     try {
-      // TODO: Filter by assigned user when API supports it
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
-      // Filter client-side for now - only show shifts where current user is Leader
       const myShifts = data.filter((e) =>
         e.participants.some((p) => p.userId === user?.userId && p.role === "Leader")
       )
       setShifts(myShifts)
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      if (error instanceof ApiError && error.status === 404) {
+        setListUnavailable(true)
+      } else {
+        setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      }
       setShifts([])
     } finally {
       setIsLoading(false)
@@ -114,6 +118,13 @@ function HonorarkraftInboxContent() {
                 }}
               >
                 Laden...
+              </div>
+            ) : listUnavailable ? (
+              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "hsl(var(--muted-foreground))" }}>
+                <p style={{ fontSize: "0.9rem" }}>Listenansicht noch nicht verfügbar</p>
+                <p style={{ fontSize: "0.78rem", marginTop: "0.4rem" }}>
+                  <code>GET /api/shifts</code> ist im Backend noch nicht implementiert.
+                </p>
               </div>
             ) : loadError ? (
               <div style={{ textAlign: "center", padding: "2rem" }}>

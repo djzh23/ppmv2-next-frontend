@@ -1,5 +1,5 @@
 export type UserRoleName = "Admin" | "Coordinator" | "Festmitarbeiter" | "Honorarkraft"
-export type UserRoleValue = UserRoleName | number | `${number}`
+export type UserRoleValue = UserRoleName
 
 export interface AuthResponse {
   token: string
@@ -65,6 +65,7 @@ export interface UserProfile {
   lastname: string
   email: string
   role: UserRoleName
+  status: "Pending" | "Approved" | "Rejected" | "Deactivated"
 }
 
 export interface CreateShiftRequest {

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
-import { apiGet } from "@/lib/apiClient"
+import { apiGet, ApiError } from "@/lib/apiClient"
 import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
 import { Plus, FileEdit, CalendarCheck, Zap } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 
 export default function CoordinatorShiftsPage() {
   return (
@@ -30,20 +29,25 @@ export default function CoordinatorShiftsPage() {
 
 function CoordinatorShiftsContent() {
   const router = useRouter()
-  const { toast } = useToast()
   const [einsaetze, setEinsaetze] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [listUnavailable, setListUnavailable] = useState(false)
 
   useEffect(() => { loadEinsaetze() }, [])
 
   async function loadEinsaetze() {
     setLoadError(null)
+    setListUnavailable(false)
     try {
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
       setEinsaetze(data)
     } catch (error) {
-      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      if (error instanceof ApiError && error.status === 404) {
+        setListUnavailable(true)
+      } else {
+        setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
+      }
       setEinsaetze([])
     } finally {
       setIsLoading(false)
@@ -105,6 +109,22 @@ function CoordinatorShiftsContent() {
       <DashboardHeader section="Koordinator" isLoading={isLoading} />
 
       <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
+
+        {listUnavailable && (
+          <div
+            style={{
+              marginBottom: "1.25rem",
+              padding: "0.75rem 1rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid hsl(var(--border))",
+              backgroundColor: "hsl(var(--muted))",
+              fontSize: "0.83rem",
+              color: "hsl(var(--muted-foreground))",
+            }}
+          >
+            Die Listenansicht ist noch nicht verfügbar — <code style={{ fontSize: "0.78rem" }}>GET /api/shifts</code> ist im Backend noch nicht implementiert.
+          </div>
+        )}
 
         {loadError && (
           <div
