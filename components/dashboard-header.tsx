@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { logout, getAuthUser } from "@/lib/auth"
 import { roleColorSchemes, defaultColorScheme } from "@/lib/role-colors"
@@ -99,7 +100,8 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
 
         <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
           {user?.email && (
-            <span
+            <Link
+              href="/profile"
               style={{
                 fontSize: "0.75rem",
                 color: "rgba(255,255,255,0.75)",
@@ -107,10 +109,22 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
+                textDecoration: "none",
+                borderBottom: "1px solid rgba(255,255,255,0.25)",
+                paddingBottom: "1px",
+                transition: "color 0.15s, border-color 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "rgba(255,255,255,1)"
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.6)"
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "rgba(255,255,255,0.75)"
+                e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"
               }}
             >
               {user.email}
-            </span>
+            </Link>
           )}
           <Button
             variant="ghost"

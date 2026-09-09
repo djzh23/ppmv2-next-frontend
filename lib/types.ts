@@ -58,6 +58,15 @@ export interface ShiftDetails {
   missingRequirements?: string[]
 }
 
+// Returned by GET /api/users/me
+export interface UserProfile {
+  id: string
+  firstname: string
+  lastname: string
+  email: string
+  role: UserRoleName
+}
+
 export interface CreateShiftRequest {
   title: string
   description: string

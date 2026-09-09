@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { apiGet } from "@/lib/apiClient"
+import { useToast } from "@/hooks/use-toast"
 import type { User } from "@/lib/types"
 
 interface LeaderPickerProps {
@@ -13,6 +14,7 @@ interface LeaderPickerProps {
 }
 
 export function LeaderPicker({ value, onChange, required }: LeaderPickerProps) {
+  const { toast } = useToast()
   const [leaders, setLeaders] = useState<User[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -22,17 +24,16 @@ export function LeaderPicker({ value, onChange, required }: LeaderPickerProps) {
 
   async function loadLeaders() {
     try {
-      // Get approved users and filter for Festmitarbeiter/Coordinator
       const users = await apiGet<User[]>("/api/admin/users/approved")
       const eligibleLeaders = users.filter((u) => u.role === "Festmitarbeiter" || u.role === "Coordinator")
       setLeaders(eligibleLeaders)
     } catch (error) {
-      console.warn("API not available, using mock data:", error)
-      // Mock data for development
-      setLeaders([
-        { id: "1", firstname: "Max", lastname: "Mustermann", role: "Festmitarbeiter" },
-        { id: "2", firstname: "Anna", lastname: "Schmidt", role: "Coordinator" },
-      ])
+      toast({
+        title: "Fehler beim Laden der Leader",
+        description: error instanceof Error ? error.message : "Die Liste der verfügbaren Leader konnte nicht geladen werden.",
+        variant: "destructive",
+      })
+      setLeaders([])
     } finally {
       setIsLoading(false)
     }
@@ -40,10 +41,20 @@ export function LeaderPicker({ value, onChange, required }: LeaderPickerProps) {
 
   return (
     <div className="space-y-2">
-      <Label>Assign Leader {required && <span className="text-destructive">*</span>}</Label>
-      <Select value={value} onValueChange={onChange} disabled={isLoading}>
+      <Label>
+        Leader zuweisen {required && <span className="text-destructive">*</span>}
+      </Label>
+      <Select value={value} onValueChange={onChange} disabled={isLoading || leaders.length === 0}>
         <SelectTrigger>
-          <SelectValue placeholder={isLoading ? "Loading..." : "Select a leader"} />
+          <SelectValue
+            placeholder={
+              isLoading
+                ? "Laden..."
+                : leaders.length === 0
+                ? "Keine Leader verfügbar"
+                : "Leader auswählen"
+            }
+          />
         </SelectTrigger>
         <SelectContent>
           {leaders.map((leader) => (

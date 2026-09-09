@@ -1,8 +1,8 @@
-# PPM – Shift Management System
+# PPM Next.js Client
 
-A Next.js web frontend for managing shifts and team assignments, backed by a .NET REST API. Built with role-based access control across four distinct user roles.
+This is the web frontend for **PPM V2**, a shift and team management system built on a .NET REST API.
 
----
+The backend is designed to be client-agnostic — this Next.js app is one possible client, chosen for rapid prototyping and to demonstrate modern frontend development alongside the .NET backend. A future client is planned as a .NET MAUI Blazor Hybrid app.
 
 ## Screenshots
 
@@ -13,39 +13,36 @@ A Next.js web frontend for managing shifts and team assignments, backed by a .NE
       <sub><b>Landing Page</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="public/screenshots/Admin-Dashboard-1-ppm.png" alt="Admin – User Management" width="100%" />
-      <sub><b>Admin – User Management</b></sub>
+      <img src="public/screenshots/Admin-Dashboard-1-ppm.png" alt="Admin User Management" width="100%" />
+      <sub><b>Admin: User Management</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img src="public/screenshots/Admin-Dashboard-2-ppm.png" alt="Admin – Role Overview" width="100%" />
-      <sub><b>Admin – Role Overview</b></sub>
+      <img src="public/screenshots/Admin-Dashboard-2-ppm.png" alt="Admin Role Overview" width="100%" />
+      <sub><b>Admin: Role Overview</b></sub>
     </td>
     <td align="center" width="50%">
-      <img src="public/screenshots/coordinator-shifts.png" alt="Coordinator – Shifts" width="100%" />
-      <sub><b>Coordinator – Shifts</b></sub>
+      <img src="public/screenshots/coordinator-shifts.png" alt="Coordinator Shifts" width="100%" />
+      <sub><b>Coordinator: Shifts</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center" width="50%">
-      <img src="public/screenshots/festmiatbeiter-shifts.png" alt="Staff – Shifts" width="100%" />
-      <sub><b>Staff – Shift Inbox</b></sub>
+      <img src="public/screenshots/festmiatbeiter-shifts.png" alt="Staff Shift Inbox" width="100%" />
+      <sub><b>Staff: Shift Inbox</b></sub>
     </td>
     <td align="center"></td>
   </tr>
 </table>
 
----
-
 ## Features
 
-- **Role-based access control** — four roles: Admin, Coordinator, Festmitarbeiter, Honorarkraft
-- **Shift workflow** — Draft → Planned → Active → Completed / Cancelled
-- **User management** — registration with admin approval and role assignment
-- **Shift management** — coordinators create and publish shifts with leader assignment
-- **Leader inbox** — assigned staff view and accept their shifts
-- **Responsive UI** — built with shadcn/ui and Tailwind CSS
+- **Role-based access control** with four user roles: Admin, Coordinator, Festmitarbeiter, Honorarkraft
+- **Shift workflow** from Draft to Planned, Active, Completed, or Cancelled
+- **User management** with admin approval and role assignment
+- **Coordinator dashboard** to create and publish shifts with leader assignment
+- **Staff inbox** for assigned users to view and accept their shifts
 
 ## Tech Stack
 
@@ -61,14 +58,14 @@ A Next.js web frontend for managing shifts and team assignments, backed by a .NE
 
 ## Local Development
 
-**Prerequisites:** Node.js 18+, running .NET backend (default: `http://localhost:5105`)
+**Prerequisites:** Node.js 18+, running PPM V2 backend (default: `http://localhost:5105`)
 
 ```bash
 npm install
 npm run dev
 ```
 
-Create a `.env.local` file and set the backend URL:
+Create a `.env.local` file:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5105
@@ -76,7 +73,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:5105
 
 ## Roadmap
 
-- BFF pattern with HttpOnly cookies (replacing JWT in localStorage)
-- Availability-based dropdowns for locations and leader selection
-- 409 conflict handling for scheduling overlaps
-- Additional client support (e.g. .NET MAUI)
+- Replace JWT localStorage auth with BFF pattern and HttpOnly cookies
+- Availability-based dropdowns for location and leader selection
+- Conflict handling (409) for overlapping shift assignments
+- .NET MAUI Blazor Hybrid client as the primary production frontend
