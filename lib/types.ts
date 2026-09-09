@@ -1,6 +1,9 @@
 export type UserRoleName = "Admin" | "Coordinator" | "Festmitarbeiter" | "Honorarkraft"
 export type UserRoleValue = UserRoleName
 
+export type ShiftStatus = "Draft" | "PendingApproval" | "Planned" | "Active" | "Completed" | "Cancelled"
+export type ConfirmationStatus = "Invited" | "Accepted" | "Declined"
+
 export interface AuthResponse {
   token: string
   userId: string
@@ -29,13 +32,17 @@ export interface Location {
   name: string
   district: string
   address?: string
+  description?: string
+  photoUrl?: string
+  contactPerson?: string
+  capacity?: number
 }
 
 // Returned by GET /api/shifts (list) — lighter than ShiftDetails
 export interface ShiftSummary {
   id: string
   title: string
-  status: "Draft" | "Planned" | "Active" | "Completed" | "Cancelled"
+  status: ShiftStatus
   startAtUtc: string
   endAtUtc: string
   location: Location
@@ -53,6 +60,7 @@ export type ParticipantRole = (typeof ParticipantRole)[keyof typeof ParticipantR
 export interface ShiftParticipant {
   userId: string
   role: ParticipantRole
+  confirmationStatus?: ConfirmationStatus
   // Backend may embed user data flat on the participant or nested under `user`
   firstname?: string
   lastname?: string
@@ -74,9 +82,16 @@ export interface ShiftDetails {
   locationId: string
   location?: Location
   participants: ShiftParticipant[]
-  status: "Draft" | "Planned" | "Active" | "Completed" | "Cancelled"
+  status: ShiftStatus
   readiness?: "ready" | "not_ready"
   missingRequirements?: string[]
+}
+
+export interface AvailableStaff {
+  userId: string
+  firstname: string
+  lastname: string
+  role: UserRoleName
 }
 
 // Returned by GET /api/users/me

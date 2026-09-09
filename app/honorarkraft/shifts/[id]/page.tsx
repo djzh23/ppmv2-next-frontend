@@ -7,9 +7,9 @@ import { RoleBadge } from "@/components/role-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { apiGet, apiPost } from "@/lib/apiClient"
+import { apiGet, apiPut } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
-import type { ShiftDetails } from "@/lib/types"
+import type { ShiftDetails, ConfirmationStatus } from "@/lib/types"
 import { participantDisplayName } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
 import { ReadinessBadge } from "@/components/readiness-badge"
@@ -38,12 +38,38 @@ export default function HonorarkraftShiftDetailsPage({ params }: { params: Promi
   )
 }
 
-function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string }) {
+function confirmationBadge(status: ConfirmationStatus | undefined) {
+  if (!status) return null
+  const styles: Record<ConfirmationStatus, { bg: string; color: string; label: string }> = {
+    Invited: { bg: "#f59e0b", color: "#fff", label: "Eingeladen" },
+    Accepted: { bg: "#16a34a", color: "#fff", label: "Angenommen" },
+    Declined: { bg: "#dc2626", color: "#fff", label: "Abgelehnt" },
+  }
+  const s = styles[status]
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontSize: "0.7rem",
+        fontWeight: 500,
+        padding: "0.1rem 0.45rem",
+        borderRadius: "9999px",
+        backgroundColor: s.bg,
+        color: s.color,
+        marginLeft: "0.4rem",
+      }}
+    >
+      {s.label}
+    </span>
+  )
+}
+
+function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
   const [shift, setShift] = useState<ShiftDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAccepting, setIsAccepting] = useState(false)
+  const [isResponding, setIsResponding] = useState(false)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -65,24 +91,25 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
     }
   }
 
-  async function handleAccept() {
-    setIsAccepting(true)
+  async function handleRespond(response: "Accepted" | "Declined") {
+    setIsResponding(true)
     try {
-      await apiPost(`/api/shifts/${shiftId}/accept`)
+      await apiPut(`/api/shifts/${shiftId}/participants/${user?.userId}/respond`, { response })
       toast({
-        title: "Einsatz angenommen",
-        description: "Du hast diesen Einsatz erfolgreich angenommen.",
+        title: response === "Accepted" ? "Einsatz angenommen" : "Einsatz abgelehnt",
+        description: response === "Accepted"
+          ? "Du hast diesen Einsatz erfolgreich angenommen."
+          : "Du hast diesen Einsatz abgelehnt.",
       })
       await loadShift()
-      router.push("/honorarkraft/inbox")
     } catch (error) {
       toast({
-        title: "Fehler beim Annehmen",
-        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht angenommen werden.",
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Die Antwort konnte nicht übermittelt werden.",
         variant: "destructive",
       })
     } finally {
-      setIsAccepting(false)
+      setIsResponding(false)
     }
   }
 
@@ -110,9 +137,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
     )
   }
 
-  // Check if current user is the leader
-  const isLeader = shift.participants.some((p) => p.userId === user?.userId && p.role === "Leader")
-  const canAccept = isLeader && shift.status === "Planned"
+  const myParticipant = shift.participants.find((p) => p.userId === user?.userId)
 
   return (
     <div
@@ -141,7 +166,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
         }}
       />
 
-      <DashboardHeader section="Honorarkraft" isLoading={isLoading || isAccepting} />
+      <DashboardHeader section="Honorarkraft" isLoading={isLoading || isResponding} />
 
       <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
@@ -165,20 +190,20 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle>Schedule</CardTitle>
+              <CardTitle>Zeitplan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">Start</p>
+                  <p className="font-medium">Beginn</p>
                   <p className="text-sm text-muted-foreground">{format(new Date(shift.startAtUtc), "PPpp")}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">End</p>
+                  <p className="font-medium">Ende</p>
                   <p className="text-sm text-muted-foreground">{format(new Date(shift.endAtUtc), "PPpp")}</p>
                 </div>
               </div>
@@ -187,13 +212,13 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
 
           <Card>
             <CardHeader>
-              <CardTitle>Location</CardTitle>
+              <CardTitle>Standort</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{shift.location?.name || "Location not set"}</p>
+                  <p className="font-medium">{shift.location?.name || "Kein Standort gesetzt"}</p>
                   {shift.location?.district && (
                     <p className="text-sm text-muted-foreground">{shift.location.district}</p>
                   )}
@@ -205,7 +230,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
           <Card>
             <CardHeader>
               <CardTitle>Team</CardTitle>
-              <CardDescription>{shift.participants.length} participant(s)</CardDescription>
+              <CardDescription>{shift.participants.length} Teilnehmer</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -220,6 +245,7 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <RoleBadge role={participant.role} />
+                          {confirmationBadge(participant.confirmationStatus)}
                         </p>
                       </div>
                     </div>
@@ -247,38 +273,55 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
             </Card>
           )}
 
-          {canAccept && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button disabled={isAccepting} className="w-full" size="lg">
-                  {isAccepting ? "Wird angenommen..." : "Einsatz annehmen"}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Mit der Annahme bestätigst du:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Du übernimmst die volle Verantwortung als Leader</li>
-                      <li>Du bestätigst deine Teilnahme zum geplanten Zeitpunkt</li>
-                      <li>Du koordinierst das Team vor Ort</li>
-                    </ul>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleAccept}>Annehmen & Bestätigen</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval" && (
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={isResponding} className="flex-1" size="lg">
+                    {isResponding ? "Wird verarbeitet..." : "Annehmen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Du bestätigst deine Teilnahme an diesem Einsatz.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleRespond("Accepted")}>Annehmen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isResponding} className="flex-1" size="lg">
+                    {isResponding ? "Wird verarbeitet..." : "Ablehnen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Einsatz ablehnen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Du lehnst die Einladung zu diesem Einsatz ab.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleRespond("Declined")}>Ablehnen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
 
-          {shift.status === "Active" && isLeader && (
+          {shift.status === "Active" && myParticipant && (
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  Du hast diesen Einsatz angenommen und bist der aktive Leader
+                  Du nimmst an diesem aktiven Einsatz teil
                 </p>
               </CardContent>
             </Card>

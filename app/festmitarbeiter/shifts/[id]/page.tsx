@@ -7,9 +7,9 @@ import { RoleBadge } from "@/components/role-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { apiGet, apiPost } from "@/lib/apiClient"
+import { apiGet, apiPut } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
-import type { ShiftDetails } from "@/lib/types"
+import type { ShiftDetails, ConfirmationStatus } from "@/lib/types"
 import { participantDisplayName } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
 import { ReadinessBadge } from "@/components/readiness-badge"
@@ -38,12 +38,39 @@ export default function FestmitarbeiterShiftDetailsPage({ params }: { params: Pr
   )
 }
 
-function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: string }) {
+function confirmationBadge(status: ConfirmationStatus | undefined) {
+  if (!status) return null
+  const styles: Record<ConfirmationStatus, { bg: string; color: string; label: string }> = {
+    Invited: { bg: "#f59e0b", color: "#fff", label: "Eingeladen" },
+    Accepted: { bg: "#16a34a", color: "#fff", label: "Angenommen" },
+    Declined: { bg: "#dc2626", color: "#fff", label: "Abgelehnt" },
+  }
+  const s = styles[status]
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        fontSize: "0.7rem",
+        fontWeight: 500,
+        padding: "0.1rem 0.45rem",
+        borderRadius: "9999px",
+        backgroundColor: s.bg,
+        color: s.color,
+        marginLeft: "0.4rem",
+      }}
+    >
+      {s.label}
+    </span>
+  )
+}
+
+function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
   const [shift, setShift] = useState<ShiftDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isAccepting, setIsAccepting] = useState(false)
+  const [isProposing, setIsProposing] = useState(false)
+  const [isResponding, setIsResponding] = useState(false)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -65,24 +92,45 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
     }
   }
 
-  async function handleAccept() {
-    setIsAccepting(true)
+  async function handlePropose() {
+    setIsProposing(true)
     try {
-      await apiPost(`/api/shifts/${shiftId}/accept`)
+      await apiPut(`/api/shifts/${shiftId}/propose`)
       toast({
-        title: "Einsatz angenommen",
-        description: "Du hast diesen Einsatz erfolgreich angenommen.",
+        title: "Einsatz vorgeschlagen",
+        description: "Der Einsatz wurde zur Genehmigung eingereicht.",
       })
       await loadShift()
-      router.push("/festmitarbeiter/inbox")
     } catch (error) {
       toast({
-        title: "Fehler beim Annehmen",
-        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht angenommen werden.",
+        title: "Fehler beim Vorschlagen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht vorgeschlagen werden.",
         variant: "destructive",
       })
     } finally {
-      setIsAccepting(false)
+      setIsProposing(false)
+    }
+  }
+
+  async function handleRespond(response: "Accepted" | "Declined") {
+    setIsResponding(true)
+    try {
+      await apiPut(`/api/shifts/${shiftId}/participants/${user?.userId}/respond`, { response })
+      toast({
+        title: response === "Accepted" ? "Einsatz angenommen" : "Einsatz abgelehnt",
+        description: response === "Accepted"
+          ? "Du hast diesen Einsatz erfolgreich angenommen."
+          : "Du hast diesen Einsatz abgelehnt.",
+      })
+      await loadShift()
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "Die Antwort konnte nicht übermittelt werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsResponding(false)
     }
   }
 
@@ -110,9 +158,8 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
     )
   }
 
-  // Check if current user is the leader
-  const isLeader = shift.participants.some((p) => p.userId === user?.userId && p.role === "Leader")
-  const canAccept = isLeader && shift.status === "Planned"
+  const myParticipant = shift.participants.find((p) => p.userId === user?.userId)
+  const isBusy = isProposing || isResponding
 
   return (
     <div
@@ -141,7 +188,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
         }}
       />
 
-      <DashboardHeader section="Festmitarbeiter" isLoading={isLoading || isAccepting} />
+      <DashboardHeader section="Festmitarbeiter" isLoading={isLoading || isBusy} />
 
       <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
@@ -165,20 +212,20 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle>Schedule</CardTitle>
+              <CardTitle>Zeitplan</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">Start</p>
+                  <p className="font-medium">Beginn</p>
                   <p className="text-sm text-muted-foreground">{format(new Date(shift.startAtUtc), "PPpp")}</p>
                 </div>
               </div>
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">End</p>
+                  <p className="font-medium">Ende</p>
                   <p className="text-sm text-muted-foreground">{format(new Date(shift.endAtUtc), "PPpp")}</p>
                 </div>
               </div>
@@ -187,13 +234,13 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
 
           <Card>
             <CardHeader>
-              <CardTitle>Location</CardTitle>
+              <CardTitle>Standort</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
                 <div>
-                  <p className="font-medium">{shift.location?.name || "Location not set"}</p>
+                  <p className="font-medium">{shift.location?.name || "Kein Standort gesetzt"}</p>
                   {shift.location?.district && (
                     <p className="text-sm text-muted-foreground">{shift.location.district}</p>
                   )}
@@ -205,7 +252,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
           <Card>
             <CardHeader>
               <CardTitle>Team</CardTitle>
-              <CardDescription>{shift.participants.length} participant(s)</CardDescription>
+              <CardDescription>{shift.participants.length} Teilnehmer</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -220,6 +267,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <RoleBadge role={participant.role} />
+                          {confirmationBadge(participant.confirmationStatus)}
                         </p>
                       </div>
                     </div>
@@ -247,38 +295,77 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
             </Card>
           )}
 
-          {canAccept && (
+          {shift.status === "Draft" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button disabled={isAccepting} className="w-full" size="lg">
-                  {isAccepting ? "Wird angenommen..." : "Einsatz annehmen"}
+                <Button disabled={isBusy} className="w-full" size="lg">
+                  {isProposing ? "Wird eingereicht..." : "Vorschlagen"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
+                  <AlertDialogTitle>Einsatz vorschlagen?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Mit der Annahme bestätigst du:
-                    <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Du übernimmst die volle Verantwortung als Leader</li>
-                      <li>Du bestätigst deine Teilnahme zum geplanten Zeitpunkt</li>
-                      <li>Du koordinierst das Team vor Ort</li>
-                    </ul>
+                    Der Einsatz wird zur Genehmigung eingereicht und erhält den Status „Zur Genehmigung".
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleAccept}>Annehmen & Bestätigen</AlertDialogAction>
+                  <AlertDialogAction onClick={handlePropose}>Vorschlagen</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           )}
 
-          {shift.status === "Active" && isLeader && (
+          {myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval" && (
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button disabled={isBusy} className="flex-1" size="lg">
+                    {isResponding ? "Wird verarbeitet..." : "Annehmen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Du bestätigst deine Teilnahme an diesem Einsatz.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleRespond("Accepted")}>Annehmen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isBusy} className="flex-1" size="lg">
+                    {isResponding ? "Wird verarbeitet..." : "Ablehnen"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Einsatz ablehnen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Du lehnst die Einladung zu diesem Einsatz ab.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleRespond("Declined")}>Ablehnen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
+
+          {shift.status === "Active" && myParticipant && (
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  Du hast diesen Einsatz angenommen und bist der aktive Leader
+                  Du nimmst an diesem aktiven Einsatz teil
                 </p>
               </CardContent>
             </Card>

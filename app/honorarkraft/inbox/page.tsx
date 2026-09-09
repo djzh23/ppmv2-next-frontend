@@ -31,8 +31,7 @@ function HonorarkraftInboxContent() {
   async function loadShifts() {
     setLoadError(null)
     try {
-      // TODO: filter by assigned user once GET /api/shifts supports ?userId= or a dedicated endpoint
-      const data = await apiGet<ShiftSummary[]>("/api/shifts?status=Planned")
+      const data = await apiGet<ShiftSummary[]>("/api/shifts")
       setShifts(data)
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
