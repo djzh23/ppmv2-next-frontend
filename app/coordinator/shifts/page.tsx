@@ -33,19 +33,17 @@ function CoordinatorShiftsContent() {
   const { toast } = useToast()
   const [einsaetze, setEinsaetze] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => { loadEinsaetze() }, [])
 
   async function loadEinsaetze() {
+    setLoadError(null)
     try {
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
       setEinsaetze(data)
     } catch (error) {
-      toast({
-        title: "Fehler beim Laden",
-        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
-        variant: "destructive",
-      })
+      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
       setEinsaetze([])
     } finally {
       setIsLoading(false)
@@ -107,6 +105,40 @@ function CoordinatorShiftsContent() {
       <DashboardHeader section="Koordinator" isLoading={isLoading} />
 
       <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
+
+        {loadError && (
+          <div
+            style={{
+              marginBottom: "1.25rem",
+              padding: "0.75rem 1rem",
+              borderRadius: "var(--radius)",
+              border: "1px solid hsl(var(--destructive) / 0.3)",
+              backgroundColor: "hsl(var(--destructive) / 0.06)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+            }}
+          >
+            <span style={{ fontSize: "0.83rem", color: "hsl(var(--destructive))" }}>
+              Einsätze konnten nicht geladen werden — {loadError}
+            </span>
+            <button
+              onClick={loadEinsaetze}
+              style={{
+                fontSize: "0.78rem",
+                color: "hsl(var(--destructive))",
+                textDecoration: "underline",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Erneut versuchen
+            </button>
+          </div>
+        )}
 
         {/* Seitenüberschrift */}
         <div style={{ marginBottom: "2rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>

@@ -6,7 +6,6 @@ import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
 import { apiGet } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
-import { useToast } from "@/hooks/use-toast"
 import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,9 +22,9 @@ export default function LeaderInboxPage() {
 
 function LeaderInboxContent() {
   const router = useRouter()
-  const { toast } = useToast()
   const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -33,6 +32,7 @@ function LeaderInboxContent() {
   }, [])
 
   async function loadShifts() {
+    setLoadError(null)
     try {
       // TODO: Filter by assigned user when API supports it
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
@@ -40,11 +40,7 @@ function LeaderInboxContent() {
       const myShifts = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === "Leader"))
       setShifts(myShifts)
     } catch (error) {
-      toast({
-        title: "Fehler beim Laden",
-        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
-        variant: "destructive",
-      })
+      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
       setShifts([])
     } finally {
       setIsLoading(false)
@@ -77,7 +73,19 @@ function LeaderInboxContent() {
 
               <TabsContent value="to-accept" className="mt-6">
                 {isLoading ? (
-                  <div className="text-center py-8">Loading...</div>
+                  <div className="text-center py-8">Laden...</div>
+                ) : loadError ? (
+                  <div style={{ textAlign: "center", padding: "2rem" }}>
+                    <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>
+                      {loadError}
+                    </p>
+                    <button
+                      onClick={loadShifts}
+                      style={{ fontSize: "0.8rem", color: "hsl(var(--muted-foreground))", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
+                    >
+                      Erneut versuchen
+                    </button>
+                  </div>
                 ) : toAcceptShifts.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No Einsätze to accept</p>
@@ -98,7 +106,19 @@ function LeaderInboxContent() {
 
               <TabsContent value="active" className="mt-6">
                 {isLoading ? (
-                  <div className="text-center py-8">Loading...</div>
+                  <div className="text-center py-8">Laden...</div>
+                ) : loadError ? (
+                  <div style={{ textAlign: "center", padding: "2rem" }}>
+                    <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>
+                      {loadError}
+                    </p>
+                    <button
+                      onClick={loadShifts}
+                      style={{ fontSize: "0.8rem", color: "hsl(var(--muted-foreground))", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
+                    >
+                      Erneut versuchen
+                    </button>
+                  </div>
                 ) : activeShifts.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <p>No active Einsätze</p>

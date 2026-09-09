@@ -10,7 +10,6 @@ import { apiGet } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
 
 export default function HonorarkraftInboxPage() {
   return (
@@ -22,9 +21,9 @@ export default function HonorarkraftInboxPage() {
 
 function HonorarkraftInboxContent() {
   const router = useRouter()
-  const { toast } = useToast()
   const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const user = getAuthUser()
 
   useEffect(() => {
@@ -32,6 +31,7 @@ function HonorarkraftInboxContent() {
   }, [])
 
   async function loadShifts() {
+    setLoadError(null)
     try {
       // TODO: Filter by assigned user when API supports it
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
@@ -41,11 +41,7 @@ function HonorarkraftInboxContent() {
       )
       setShifts(myShifts)
     } catch (error) {
-      toast({
-        title: "Fehler beim Laden",
-        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
-        variant: "destructive",
-      })
+      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
       setShifts([])
     } finally {
       setIsLoading(false)
@@ -118,6 +114,18 @@ function HonorarkraftInboxContent() {
                 }}
               >
                 Laden...
+              </div>
+            ) : loadError ? (
+              <div style={{ textAlign: "center", padding: "2rem" }}>
+                <p style={{ fontSize: "0.85rem", color: "hsl(var(--destructive))", marginBottom: "0.75rem" }}>
+                  {loadError}
+                </p>
+                <button
+                  onClick={loadShifts}
+                  style={{ fontSize: "0.8rem", color: "hsl(var(--muted-foreground))", textDecoration: "underline", background: "none", border: "none", cursor: "pointer" }}
+                >
+                  Erneut versuchen
+                </button>
               </div>
             ) : shifts.length === 0 ? (
               <div
