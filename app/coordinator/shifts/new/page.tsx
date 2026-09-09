@@ -14,19 +14,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiPost } from "@/lib/apiClient"
-import type { CreateEinsatzRequest } from "@/lib/types"
+import type { CreateShiftRequest } from "@/lib/types"
 import { ParticipantRole } from "@/lib/types"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft } from "lucide-react"
 
-export default function NewEinsatzPage() {
+export default function NewShiftPage() {
   return (
     <RoleGuard allowedRoles={["Coordinator"]}>
-      <NewEinsatzContent />
+      <NewShiftContent />
     </RoleGuard>
   )
 }
 
-function NewEinsatzContent() {
+function NewShiftContent() {
   const router = useRouter()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
@@ -58,7 +60,7 @@ function NewEinsatzContent() {
       const startAtUtc = new Date(`${startDate}T${startTime}`).toISOString()
       const endAtUtc = new Date(`${endDate}T${endTime}`).toISOString()
 
-      const payload: CreateEinsatzRequest = {
+      const payload: CreateShiftRequest = {
         title,
         description,
         startAtUtc,
@@ -72,10 +74,10 @@ function NewEinsatzContent() {
         ],
       }
 
-      const createdEinsatz = await apiPost<{ id: string }>("/api/einsaetze", payload)
+      const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
 
       if (shouldPublish && createdEinsatz.id) {
-        await apiPost(`/api/einsaetze/${createdEinsatz.id}/publish`)
+        await apiPost(`/api/shifts/${createdEinsatz.id}/publish`)
         toast({
           title: "Einsatz published",
           description: "The Einsatz has been created and published successfully",
@@ -87,7 +89,7 @@ function NewEinsatzContent() {
         })
       }
 
-      router.push("/coordinator/einsaetze")
+      router.push("/coordinator/shifts")
     } catch (error) {
       toast({
         title: "Error",
@@ -102,23 +104,51 @@ function NewEinsatzContent() {
   const isFormValid = title && description && startDate && startTime && endDate && endTime && locationId && leaderId
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.back()} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <h1 className="text-2xl font-bold">Create New Einsatz</h1>
-          <p className="text-sm text-muted-foreground">Fill in the details to create a new assignment</p>
-        </div>
-      </header>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        backgroundColor: "hsl(var(--background))",
+        overflow: "hidden",
+      }}
+    >
+      {/* Grid-Hintergrund */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
 
-      <main className="container mx-auto px-4 py-8">
+      <DashboardHeader section="Koordinator" isLoading={isLoading} />
+
+      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
+          <ArrowLeft className="h-4 w-4" />
+          Zurück
+        </Button>
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
+            Neuen Einsatz erstellen
+          </h1>
+          <p style={{ fontSize: "0.83rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>
+            Details ausfüllen und Einsatz als Entwurf speichern oder direkt veröffentlichen
+          </p>
+        </div>
         <Card className="max-w-3xl mx-auto">
           <CardHeader>
-            <CardTitle>Einsatz Details</CardTitle>
-            <CardDescription>Enter the information for the new assignment</CardDescription>
+            <CardTitle>Einsatz-Details</CardTitle>
+            <CardDescription>Informationen für den neuen Einsatz eingeben</CardDescription>
           </CardHeader>
           <CardContent>
             <form className="space-y-6">
@@ -215,7 +245,7 @@ function NewEinsatzContent() {
                   disabled={!isFormValid || isLoading}
                   className="flex-1"
                 >
-                  Save as Draft
+                  Als Entwurf speichern
                 </Button>
                 <Button
                   type="button"
@@ -223,13 +253,15 @@ function NewEinsatzContent() {
                   disabled={!isFormValid || isLoading}
                   className="flex-1"
                 >
-                  {isLoading ? "Creating..." : "Save & Publish"}
+                  {isLoading ? "Wird erstellt..." : "Speichern & Veröffentlichen"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }
