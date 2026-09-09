@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { apiPost } from "@/lib/apiClient"
+import { apiPost, apiPut } from "@/lib/apiClient"
 import type { CreateShiftRequest } from "@/lib/types"
 import { ParticipantRole } from "@/lib/types"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -47,8 +47,8 @@ function NewShiftContent() {
 
     if (!leaderId) {
       toast({
-        title: "Leader required",
-        description: "You must assign exactly one leader to the Einsatz",
+        title: "Leader erforderlich",
+        description: "Bitte einen Leader für den Einsatz auswählen.",
         variant: "destructive",
       })
       return
@@ -77,23 +77,23 @@ function NewShiftContent() {
       const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
 
       if (shouldPublish && createdEinsatz.id) {
-        await apiPost(`/api/shifts/${createdEinsatz.id}/publish`)
+        await apiPut(`/api/shifts/${createdEinsatz.id}/approve`)
         toast({
-          title: "Einsatz published",
-          description: "The Einsatz has been created and published successfully",
+          title: "Einsatz genehmigt",
+          description: "Der Einsatz wurde erstellt und direkt genehmigt.",
         })
       } else {
         toast({
-          title: "Draft saved",
-          description: "The Einsatz has been saved as a draft",
+          title: "Entwurf gespeichert",
+          description: "Der Einsatz wurde als Entwurf gespeichert.",
         })
       }
 
       router.push("/coordinator/shifts")
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create Einsatz",
+        title: "Fehler beim Erstellen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht erstellt werden.",
         variant: "destructive",
       })
     } finally {
@@ -154,26 +154,26 @@ function NewShiftContent() {
             <form className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="title">
-                  Title <span className="text-destructive">*</span>
+                  Titel <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter title"
+                  placeholder="Titel des Einsatzes"
                   required
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">
-                  Description <span className="text-destructive">*</span>
+                  Beschreibung <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter description"
+                  placeholder="Beschreibung des Einsatzes"
                   rows={4}
                   required
                 />
@@ -182,7 +182,7 @@ function NewShiftContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">
-                    Start Date <span className="text-destructive">*</span>
+                    Startdatum <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="startDate"
@@ -194,7 +194,7 @@ function NewShiftContent() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="startTime">
-                    Start Time <span className="text-destructive">*</span>
+                    Startzeit <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="startTime"
@@ -209,7 +209,7 @@ function NewShiftContent() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="endDate">
-                    End Date <span className="text-destructive">*</span>
+                    Enddatum <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="endDate"
@@ -221,7 +221,7 @@ function NewShiftContent() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endTime">
-                    End Time <span className="text-destructive">*</span>
+                    Endzeit <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="endTime"
@@ -235,7 +235,13 @@ function NewShiftContent() {
 
               <LocationSelect value={locationId} onChange={setLocationId} required />
 
-              <LeaderPicker value={leaderId} onChange={setLeaderId} required />
+              <LeaderPicker
+                value={leaderId}
+                onChange={setLeaderId}
+                locationId={locationId}
+                date={startDate}
+                required
+              />
 
               <div className="flex gap-3 pt-4">
                 <Button
