@@ -1,7 +1,4 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-if (!API_BASE_URL) {
-  throw new Error("NEXT_PUBLIC_API_BASE_URL is not set. Add it to your .env.local file.")
-}
 
 export class ApiError extends Error {
   constructor(
@@ -69,6 +66,10 @@ function extractErrorMessage(data: unknown, fallback: string) {
 }
 
 async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promise<Response> {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not set. Add it to your .env.local file.")
+  }
+
   const token = isBrowser() ? localStorage.getItem("authToken") : null
 
   const headers = new Headers(options.headers)
