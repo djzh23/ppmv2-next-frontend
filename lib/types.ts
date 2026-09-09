@@ -28,6 +28,18 @@ export interface Location {
   id: string
   name: string
   district: string
+  address?: string
+}
+
+// Returned by GET /api/shifts (list) — lighter than ShiftDetails
+export interface ShiftSummary {
+  id: string
+  title: string
+  status: "Draft" | "Planned" | "Active" | "Completed" | "Cancelled"
+  startAtUtc: string
+  endAtUtc: string
+  location: Location
+  participantCount: number
 }
 
 export const ParticipantRole = {

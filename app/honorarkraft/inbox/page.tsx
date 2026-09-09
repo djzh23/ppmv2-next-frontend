@@ -6,9 +6,8 @@ import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
-import { apiGet, ApiError } from "@/lib/apiClient"
-import { getAuthUser } from "@/lib/auth"
-import type { ShiftDetails } from "@/lib/types"
+import { apiGet } from "@/lib/apiClient"
+import type { ShiftSummary } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function HonorarkraftInboxPage() {
@@ -21,11 +20,9 @@ export default function HonorarkraftInboxPage() {
 
 function HonorarkraftInboxContent() {
   const router = useRouter()
-  const [shifts, setShifts] = useState<ShiftDetails[]>([])
+  const [shifts, setShifts] = useState<ShiftSummary[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [listUnavailable, setListUnavailable] = useState(false)
-  const user = getAuthUser()
 
   useEffect(() => {
     loadShifts()
@@ -33,19 +30,12 @@ function HonorarkraftInboxContent() {
 
   async function loadShifts() {
     setLoadError(null)
-    setListUnavailable(false)
     try {
-      const data = await apiGet<ShiftDetails[]>("/api/shifts")
-      const myShifts = data.filter((e) =>
-        e.participants.some((p) => p.userId === user?.userId && p.role === "Leader")
-      )
-      setShifts(myShifts)
+      // TODO: filter by assigned user once GET /api/shifts supports ?userId= or a dedicated endpoint
+      const data = await apiGet<ShiftSummary[]>("/api/shifts?status=Planned")
+      setShifts(data)
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {
-        setListUnavailable(true)
-      } else {
-        setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
-      }
+      setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
       setShifts([])
     } finally {
       setIsLoading(false)
@@ -118,13 +108,6 @@ function HonorarkraftInboxContent() {
                 }}
               >
                 Laden...
-              </div>
-            ) : listUnavailable ? (
-              <div style={{ textAlign: "center", padding: "3rem 1rem", color: "hsl(var(--muted-foreground))" }}>
-                <p style={{ fontSize: "0.9rem" }}>Listenansicht noch nicht verfügbar</p>
-                <p style={{ fontSize: "0.78rem", marginTop: "0.4rem" }}>
-                  <code>GET /api/shifts</code> ist im Backend noch nicht implementiert.
-                </p>
               </div>
             ) : loadError ? (
               <div style={{ textAlign: "center", padding: "2rem" }}>
