@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import type { ShiftDetails } from "@/lib/types"
+import { participantDisplayName } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
 import { ReadinessBadge } from "@/components/readiness-badge"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -209,7 +210,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
                       <Users className="h-4 w-4 mr-3 text-muted-foreground" />
                       <div>
                         <p className="font-medium">
-                          {participant.user?.firstname} {participant.user?.lastname}
+                          {participantDisplayName(participant)}
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <RoleBadge role={participant.role} />
@@ -251,9 +252,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
                   <AlertDialogTitle>Einsatz veröffentlichen?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Der Status wird auf „Geplant" gesetzt und der Einsatz wird für{" "}
-                    <strong>
-                      {leader?.user?.firstname} {leader?.user?.lastname}
-                    </strong>{" "}
+                    <strong>{leader ? participantDisplayName(leader) : "den Leader"}</strong>{" "}
                     sichtbar, der ihn annehmen kann.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

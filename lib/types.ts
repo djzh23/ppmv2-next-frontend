@@ -53,7 +53,16 @@ export type ParticipantRole = (typeof ParticipantRole)[keyof typeof ParticipantR
 export interface ShiftParticipant {
   userId: string
   role: ParticipantRole
+  // Backend may embed user data flat on the participant or nested under `user`
+  firstname?: string
+  lastname?: string
   user?: User
+}
+
+export function participantDisplayName(p: ShiftParticipant): string {
+  if (p.firstname || p.lastname) return `${p.firstname ?? ""} ${p.lastname ?? ""}`.trim()
+  if (p.user?.firstname || p.user?.lastname) return `${p.user.firstname ?? ""} ${p.user.lastname ?? ""}`.trim()
+  return p.userId.slice(0, 8)
 }
 
 export interface ShiftDetails {

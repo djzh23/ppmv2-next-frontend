@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
+import { participantDisplayName } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
 import { ReadinessBadge } from "@/components/readiness-badge"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -214,8 +215,8 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
                       <Users className="h-4 w-4 mr-3 text-muted-foreground" />
                       <div>
                         <p className="font-medium">
-                          {participant.user?.firstname} {participant.user?.lastname}
-                          {participant.userId === user?.userId && " (You)"}
+                          {participantDisplayName(participant)}
+                          {participant.userId === user?.userId && " (Sie)"}
                         </p>
                         <p className="text-sm text-muted-foreground flex items-center gap-2">
                           <RoleBadge role={participant.role} />
