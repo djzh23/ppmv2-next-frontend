@@ -10,6 +10,10 @@ import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
+import { StatusBadge } from "@/components/status-badge"
+import { ReadinessBadge } from "@/components/readiness-badge"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
 import { format } from "date-fns"
 import {
@@ -47,11 +51,14 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
 
   async function loadShift() {
     try {
-      const data = await apiGet<ShiftDetails>(`/api/einsaetze/${shiftId}`)
+      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
       setShift(data)
     } catch (error) {
-      // For development: silently fail
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Einsatz konnte nicht geladen werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -60,16 +67,19 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
   async function handleAccept() {
     setIsAccepting(true)
     try {
-      await apiPost(`/api/einsaetze/${shiftId}/accept`)
+      await apiPost(`/api/shifts/${shiftId}/accept`)
       toast({
-        title: "Shift accepted",
-        description: "You have successfully accepted this Shift and taken responsibility",
+        title: "Einsatz angenommen",
+        description: "Du hast diesen Einsatz erfolgreich angenommen.",
       })
       await loadShift()
       router.push("/honorarkraft/inbox")
     } catch (error) {
-      // For development: silently fail
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Annehmen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht angenommen werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsAccepting(false)
     }
@@ -77,16 +87,24 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Honorarkraft" isLoading />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
 
   if (!shift) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Einsatz not found</p>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Honorarkraft" />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "hsl(var(--muted-foreground))" }}>
+          Einsatz nicht gefunden
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
@@ -96,27 +114,53 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
   const canAccept = isLeader && shift.status === "Planned"
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.back()} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Inbox
-          </Button>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{shift.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
-            </div>
-            <div className="flex gap-2">
-              <StatusBadge status={shift.status} />
-              <ReadinessBadge readiness={shift.readiness} />
-            </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        backgroundColor: "hsl(var(--background))",
+        overflow: "hidden",
+      }}
+    >
+      {/* Grid-Hintergrund */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
+      <DashboardHeader section="Honorarkraft" isLoading={isLoading || isAccepting} />
+
+      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
+          <ArrowLeft className="h-4 w-4" />
+          Zurück zur Inbox
+        </Button>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
+              {shift.title}
+            </h1>
+            {shift.description && (
+              <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>{shift.description}</p>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <StatusBadge status={shift.status} />
+            <ReadinessBadge readiness={shift.readiness} />
           </div>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
             <CardHeader>
@@ -187,8 +231,8 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
           {shift.missingRequirements && shift.missingRequirements.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-amber-600">Missing Requirements</CardTitle>
-                <CardDescription>Please review these items before accepting</CardDescription>
+                <CardTitle className="text-amber-600">Fehlende Voraussetzungen</CardTitle>
+                <CardDescription>Bitte diese Punkte vor der Annahme prüfen</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="list-disc list-inside space-y-1 text-sm">
@@ -206,24 +250,24 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={isAccepting} className="w-full" size="lg">
-                  {isAccepting ? "Accepting..." : "Accept Einsatz"}
+                  {isAccepting ? "Wird angenommen..." : "Einsatz annehmen"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Accept this Shift?</AlertDialogTitle>
+                  <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    By accepting, you confirm that you:
+                    Mit der Annahme bestätigst du:
                     <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Take full responsibility as the leader</li>
-                      <li>Confirm your attendance at the scheduled time</li>
-                      <li>Commit to coordinating the team</li>
+                      <li>Du übernimmst die volle Verantwortung als Leader</li>
+                      <li>Du bestätigst deine Teilnahme zum geplanten Zeitpunkt</li>
+                      <li>Du koordinierst das Team vor Ort</li>
                     </ul>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleAccept}>Accept & Confirm</AlertDialogAction>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleAccept}>Annehmen & Bestätigen</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -233,13 +277,15 @@ function HonorarkraftShiftDetailsContent({ shiftId: shiftId }: { shiftId: string
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  You have accepted this Einsatz and are the active leader
+                  Du hast diesen Einsatz angenommen und bist der aktive Leader
                 </p>
               </CardContent>
             </Card>
           )}
         </div>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }

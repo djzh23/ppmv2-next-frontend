@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
 import type { ShiftDetails } from "@/lib/types"
+import { StatusBadge } from "@/components/status-badge"
+import { ReadinessBadge } from "@/components/readiness-badge"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
@@ -49,11 +51,14 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
 
   async function loadShift() {
     try {
-      const data = await apiGet<ShiftDetails>(`/api/einsaetze/${shiftId}`)
+      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
       setShift(data)
     } catch (error) {
-      // For development: silently fail
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Einsatz konnte nicht geladen werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsLoading(false)
     }
@@ -62,16 +67,19 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
   async function handleAccept() {
     setIsAccepting(true)
     try {
-      await apiPost(`/api/einsaetze/${shiftId}/accept`)
+      await apiPost(`/api/shifts/${shiftId}/accept`)
       toast({
-        title: "Einsatz accepted",
-        description: "You have successfully accepted this Einsatz and taken responsibility",
+        title: "Einsatz angenommen",
+        description: "Du hast diesen Einsatz erfolgreich angenommen.",
       })
       await loadShift()
       router.push("/festmitarbeiter/inbox")
     } catch (error) {
-      // For development: silently fail
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Annehmen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht angenommen werden.",
+        variant: "destructive",
+      })
     } finally {
       setIsAccepting(false)
     }
@@ -223,8 +231,8 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
           {shift.missingRequirements && shift.missingRequirements.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-amber-600">Missing Requirements</CardTitle>
-                <CardDescription>Please review these items before accepting</CardDescription>
+                <CardTitle className="text-amber-600">Fehlende Voraussetzungen</CardTitle>
+                <CardDescription>Bitte diese Punkte vor der Annahme prüfen</CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="list-disc list-inside space-y-1 text-sm">
@@ -242,24 +250,24 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={isAccepting} className="w-full" size="lg">
-                  {isAccepting ? "Accepting..." : "Accept Einsatz"}
+                  {isAccepting ? "Wird angenommen..." : "Einsatz annehmen"}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Accept this Einsatz?</AlertDialogTitle>
+                  <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    By accepting, you confirm that you:
+                    Mit der Annahme bestätigst du:
                     <ul className="list-disc list-inside mt-2 space-y-1">
-                      <li>Take full responsibility as the leader</li>
-                      <li>Confirm your attendance at the scheduled time</li>
-                      <li>Commit to coordinating the team</li>
+                      <li>Du übernimmst die volle Verantwortung als Leader</li>
+                      <li>Du bestätigst deine Teilnahme zum geplanten Zeitpunkt</li>
+                      <li>Du koordinierst das Team vor Ort</li>
                     </ul>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleAccept}>Accept & Confirm</AlertDialogAction>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleAccept}>Annehmen & Bestätigen</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -269,7 +277,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId: shiftId }: { shiftId: str
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  You have accepted this Shift and are the active leader
+                  Du hast diesen Einsatz angenommen und bist der aktive Leader
                 </p>
               </CardContent>
             </Card>

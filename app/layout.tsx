@@ -5,9 +5,8 @@ import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Einsätze Management",
+  title: "PPM – Shift Management",
   description: "Manage assignments and shifts efficiently",
-  generator: "v0.app",
   icons: {
     icon: [
       {

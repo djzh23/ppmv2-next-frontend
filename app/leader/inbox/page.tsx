@@ -6,6 +6,7 @@ import { RoleGuard } from "@/components/role-guard"
 import { ShiftCard } from "@/components/shift-card"
 import { apiGet } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
+import { useToast } from "@/hooks/use-toast"
 import type { ShiftDetails } from "@/lib/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,13 +35,16 @@ function LeaderInboxContent() {
   async function loadShifts() {
     try {
       // TODO: Filter by assigned user when API supports it
-      const data = await apiGet<ShiftDetails[]>("/api/einsaetze")
+      const data = await apiGet<ShiftDetails[]>("/api/shifts")
       // Filter client-side for now - only show Shifts where current user is Leader
       const myShifts = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === "Leader"))
       setShifts(myShifts)
     } catch (error) {
-      // For development: silently fail and use empty data
-      console.warn("API not available, using empty data:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
+        variant: "destructive",
+      })
       setShifts([])
     } finally {
       setIsLoading(false)

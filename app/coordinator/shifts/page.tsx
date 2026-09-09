@@ -41,7 +41,11 @@ function CoordinatorShiftsContent() {
       const data = await apiGet<ShiftDetails[]>("/api/shifts")
       setEinsaetze(data)
     } catch (error) {
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
+        variant: "destructive",
+      })
       setEinsaetze([])
     } finally {
       setIsLoading(false)
@@ -209,7 +213,7 @@ function CoordinatorShiftsContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {draftEinsaetze.map((e) => (
-                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/shifts/${id}`)} />
                     ))}
                   </div>
                 )}
@@ -223,7 +227,7 @@ function CoordinatorShiftsContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {plannedEinsaetze.map((e) => (
-                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/shifts/${id}`)} />
                     ))}
                   </div>
                 )}
@@ -237,7 +241,7 @@ function CoordinatorShiftsContent() {
                 ) : (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {activeEinsaetze.map((e) => (
-                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/einsaetze/${id}`)} />
+                      <ShiftCard key={e.id} shift={e} onView={(id) => router.push(`/coordinator/shifts/${id}`)} />
                     ))}
                   </div>
                 )}

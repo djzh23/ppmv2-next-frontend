@@ -9,6 +9,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost } from "@/lib/apiClient"
 import type { ShiftDetails } from "@/lib/types"
+import { StatusBadge } from "@/components/status-badge"
+import { ReadinessBadge } from "@/components/readiness-badge"
+import { DashboardHeader } from "@/components/dashboard-header"
+import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
 import { format } from "date-fns"
 import {
@@ -45,12 +49,12 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
 
   async function loadShift() {
     try {
-      const data = await apiGet<ShiftDetails>(`/api/einsaetze/${shiftId}`)
+      const data = await apiGet<ShiftDetails>(`/api/shifts/${shiftId}`)
       setShift(data)
     } catch (error) {
       toast({
-        title: "Error loading Einsatz",
-        description: error instanceof Error ? error.message : "Failed to load data",
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht geladen werden.",
         variant: "destructive",
       })
     } finally {
@@ -61,16 +65,16 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   async function handlePublish() {
     setIsPublishing(true)
     try {
-      await apiPost(`/api/einsaetze/${shiftId}/publish`)
+      await apiPost(`/api/shifts/${shiftId}/publish`)
       toast({
-        title: "Einsatz published",
-        description: "The Einsatz is now visible to the assigned leader",
+        title: "Einsatz veröffentlicht",
+        description: "Der Einsatz ist jetzt für den zugewiesenen Leader sichtbar.",
       })
       await loadShift()
     } catch (error) {
       toast({
-        title: "Error publishing",
-        description: error instanceof Error ? error.message : "Failed to publish Einsatz",
+        title: "Fehler beim Veröffentlichen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht veröffentlicht werden.",
         variant: "destructive",
       })
     } finally {
@@ -80,16 +84,24 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Koordinator" isLoading />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
 
   if (!shift) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Einsatz not found</p>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <DashboardHeader section="Koordinator" />
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "hsl(var(--muted-foreground))" }}>
+          Einsatz nicht gefunden
+        </div>
+        <DashboardFooter />
       </div>
     )
   }
@@ -97,27 +109,53 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const leader = shift.participants.find((p) => p.role === "Leader")
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => router.back()} className="mb-2">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">{shift.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">{shift.description}</p>
-            </div>
-            <div className="flex gap-2">
-              <StatusBadge status={shift.status} />
-              <ReadinessBadge readiness={shift.readiness} />
-            </div>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        backgroundColor: "hsl(var(--background))",
+        overflow: "hidden",
+      }}
+    >
+      {/* Grid-Hintergrund */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundImage: [
+            "linear-gradient(rgba(100,100,100,0.07) 1px, transparent 1px)",
+            "linear-gradient(90deg, rgba(100,100,100,0.07) 1px, transparent 1px)",
+          ].join(", "),
+          backgroundSize: "48px 48px",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
+      <DashboardHeader section="Koordinator" isLoading={isLoading || isPublishing} />
+
+      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
+          <ArrowLeft className="h-4 w-4" />
+          Zurück
+        </Button>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+          <div>
+            <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
+              {shift.title}
+            </h1>
+            {shift.description && (
+              <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>{shift.description}</p>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <StatusBadge status={shift.status} />
+            <ReadinessBadge readiness={shift.readiness} />
           </div>
         </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
             <CardHeader>
@@ -210,24 +248,26 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Publish this Einsatz?</AlertDialogTitle>
+                  <AlertDialogTitle>Einsatz veröffentlichen?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will change the status to "Planned" and make it visible to{" "}
+                    Der Status wird auf „Geplant" gesetzt und der Einsatz wird für{" "}
                     <strong>
                       {leader?.user?.firstname} {leader?.user?.lastname}
                     </strong>{" "}
-                    who will be able to accept it.
+                    sichtbar, der ihn annehmen kann.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handlePublish}>Publish</AlertDialogAction>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handlePublish}>Veröffentlichen</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           )}
         </div>
       </main>
+
+      <DashboardFooter />
     </div>
   )
 }

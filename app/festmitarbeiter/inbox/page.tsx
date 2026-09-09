@@ -8,6 +8,7 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
 import { apiGet } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
+import { useToast } from "@/hooks/use-toast"
 import type { ShiftDetails } from "@/lib/types"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -21,6 +22,7 @@ export default function FestmitarbeiterInboxPage() {
 
 function FestmitarbeiterInboxContent() {
   const router = useRouter()
+  const { toast } = useToast()
   const [shifts, setShifts] = useState<ShiftDetails[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const user = getAuthUser()
@@ -29,11 +31,15 @@ function FestmitarbeiterInboxContent() {
 
   async function loadShifts() {
     try {
-      const data = await apiGet<ShiftDetails[]>("/api/einsaetze")
+      const data = await apiGet<ShiftDetails[]>("/api/shifts")
       const myEinsaetze = data.filter((e) => e.participants.some((p) => p.userId === user?.userId && p.role === "Leader"))
       setShifts(myEinsaetze)
     } catch (error) {
-      console.warn("API not available:", error)
+      toast({
+        title: "Fehler beim Laden",
+        description: error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.",
+        variant: "destructive",
+      })
       setShifts([])
     } finally {
       setIsLoading(false)

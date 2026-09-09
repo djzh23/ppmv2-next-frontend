@@ -82,23 +82,11 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promi
     headers.set("Authorization", `Bearer ${token}`)
   }
 
-  console.log("[api] Making request:", {
-    endpoint,
-    baseUrl: API_BASE_URL,
-    method,
-    origin: isBrowser() ? window.location.origin : "server",
-  })
-
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers,
       mode: "cors",
-    })
-
-    console.log("[api] Response received:", {
-      status: response.status,
-      ok: response.ok,
     })
 
     if (response.status === 401) {
