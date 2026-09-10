@@ -57,7 +57,7 @@ function CoordinatorLocationsContent() {
   async function handleDeactivate(id: string) {
     try {
       await apiDelete(`/api/locations/${id}`)
-      await loadLocations()
+      setLocations((prev) => prev.map((l) => l.id === id ? { ...l, isActive: false } : l))
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Deaktivierung fehlgeschlagen.")
     }
@@ -235,7 +235,14 @@ function CoordinatorLocationsContent() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editLocation={editLocation}
-        onSuccess={loadLocations}
+        onSuccess={(saved) => {
+          setLocations((prev) => {
+            const exists = prev.some((l) => l.id === saved.id)
+            return exists
+              ? prev.map((l) => l.id === saved.id ? saved : l)
+              : [...prev, saved]
+          })
+        }}
       />
     </div>
   )

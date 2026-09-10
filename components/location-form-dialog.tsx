@@ -20,7 +20,7 @@ interface LocationFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editLocation?: LocationDetail | null
-  onSuccess: () => void
+  onSuccess: (saved: LocationDetail) => void
 }
 
 export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess }: LocationFormDialogProps) {
@@ -86,6 +86,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
 
     setIsSubmitting(true)
     try {
+      let saved: LocationDetail
       if (isEdit && editLocation) {
         const payload: UpdateLocationRequest = {
           name: form.name.trim(),
@@ -98,7 +99,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
           notes: form.notes?.trim() || undefined,
           isActive,
         }
-        await apiPut<LocationDetail>(`/api/locations/${editLocation.id}`, payload)
+        saved = await apiPut<LocationDetail>(`/api/locations/${editLocation.id}`, payload)
       } else {
         const payload: CreateLocationRequest = {
           name: form.name.trim(),
@@ -110,9 +111,9 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
           capacity: form.capacity,
           notes: form.notes?.trim() || undefined,
         }
-        await apiPost<LocationDetail>("/api/locations", payload)
+        saved = await apiPost<LocationDetail>("/api/locations", payload)
       }
-      onSuccess()
+      onSuccess(saved)
       onOpenChange(false)
     } catch (err) {
       if (err instanceof ApiError) {

@@ -305,7 +305,7 @@ function LocationDetailContent() {
           open={editOpen}
           onOpenChange={setEditOpen}
           editLocation={location}
-          onSuccess={loadLocation}
+          onSuccess={(saved) => setLocation(saved)}
         />
       )}
     </div>
