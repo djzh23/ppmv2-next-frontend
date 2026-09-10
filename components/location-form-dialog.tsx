@@ -39,6 +39,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
   const [form, setForm] = useState<CreateLocationRequest>(emptyForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; district?: string }>({})
 
   useEffect(() => {
     if (open) {
@@ -57,6 +58,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
         setForm(emptyForm)
       }
       setError(null)
+      setFieldErrors({})
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editLocation])
@@ -68,6 +70,15 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError(null)
+
+    const errs: { name?: string; district?: string } = {}
+    if (!form.name.trim()) errs.name = "Name ist erforderlich"
+    if (!form.district.trim()) errs.district = "Bezirk ist erforderlich"
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs)
+      return
+    }
+    setFieldErrors({})
 
     const payload: CreateLocationRequest = {
       name: form.name.trim(),
@@ -110,20 +121,26 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
               <Input
                 id="loc-name"
                 value={form.name}
-                onChange={(e) => set("name", e.target.value)}
-                required
+                onChange={(e) => { set("name", e.target.value); setFieldErrors((p) => ({ ...p, name: undefined })) }}
                 placeholder="z. B. Sportheim Nord"
+                style={fieldErrors.name ? { borderColor: "hsl(var(--destructive))" } : undefined}
               />
+              {fieldErrors.name && (
+                <span style={{ fontSize: "0.75rem", color: "hsl(var(--destructive))" }}>{fieldErrors.name}</span>
+              )}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <Label htmlFor="loc-district">Bezirk *</Label>
               <Input
                 id="loc-district"
                 value={form.district}
-                onChange={(e) => set("district", e.target.value)}
-                required
+                onChange={(e) => { set("district", e.target.value); setFieldErrors((p) => ({ ...p, district: undefined })) }}
                 placeholder="z. B. Mitte"
+                style={fieldErrors.district ? { borderColor: "hsl(var(--destructive))" } : undefined}
               />
+              {fieldErrors.district && (
+                <span style={{ fontSize: "0.75rem", color: "hsl(var(--destructive))" }}>{fieldErrors.district}</span>
+              )}
             </div>
           </div>
 
