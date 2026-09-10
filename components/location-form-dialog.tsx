@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import type { LocationDetail, CreateLocationRequest } from "@/lib/types"
-import { apiPost, apiPut } from "@/lib/apiClient"
+import { apiPost, apiPut, ApiError } from "@/lib/apiClient"
 import {
   Dialog,
   DialogContent,
@@ -101,7 +101,12 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
       onSuccess()
       onOpenChange(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen.")
+      if (err instanceof ApiError) {
+        const detail = err.details ? ` — ${JSON.stringify(err.details)}` : ""
+        setError(`HTTP ${err.status}: ${err.message}${detail}`)
+      } else {
+        setError(err instanceof Error ? err.message : "Speichern fehlgeschlagen.")
+      }
     } finally {
       setIsSubmitting(false)
     }
