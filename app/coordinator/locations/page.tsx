@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import { RoleGuard } from "@/components/role-guard"
 import { LocationCard } from "@/components/location-card"
 import { LocationFormDialog } from "@/components/location-form-dialog"
-import { apiGet, apiDelete, apiPut } from "@/lib/apiClient"
-import type { LocationDetail, UpdateLocationRequest } from "@/lib/types"
+import { apiGet, apiDelete } from "@/lib/apiClient"
+import type { LocationDetail } from "@/lib/types"
 import { getAuthUser } from "@/lib/auth"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
@@ -60,28 +60,6 @@ function CoordinatorLocationsContent() {
       await loadLocations()
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Deaktivierung fehlgeschlagen.")
-    }
-  }
-
-  async function handleReactivate(id: string) {
-    const loc = locations.find((l) => l.id === id)
-    if (!loc) return
-    const payload: UpdateLocationRequest = {
-      name: loc.name,
-      district: loc.district,
-      address: loc.address,
-      description: loc.description,
-      photoUrl: loc.photoUrl,
-      contactPerson: loc.contactPerson,
-      capacity: loc.capacity,
-      notes: loc.notes,
-      isActive: true,
-    }
-    try {
-      await apiPut(`/api/locations/${id}`, payload)
-      await loadLocations()
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Reaktivierung fehlgeschlagen.")
     }
   }
 
@@ -245,7 +223,6 @@ function CoordinatorLocationsContent() {
                 canEdit={canEdit}
                 onEdit={openEdit}
                 onDeactivate={handleDeactivate}
-                onReactivate={handleReactivate}
               />
             ))}
           </div>

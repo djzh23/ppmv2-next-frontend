@@ -16,17 +16,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Building2, MapPin, Users, Phone, Pencil, PowerOff, Power, ArrowRight } from "lucide-react"
+import { Building2, MapPin, Users, Phone, Pencil, PowerOff, ArrowRight } from "lucide-react"
 
 interface LocationCardProps {
   location: LocationDetail
   canEdit: boolean
   onEdit: (location: LocationDetail) => void
   onDeactivate: (id: string) => void
-  onReactivate: (id: string) => void
 }
 
-export function LocationCard({ location, canEdit, onEdit, onDeactivate, onReactivate }: LocationCardProps) {
+export function LocationCard({ location, canEdit, onEdit, onDeactivate }: LocationCardProps) {
   const router = useRouter()
 
   const hasPhoto = !!location.photoUrl
@@ -53,7 +52,6 @@ export function LocationCard({ location, canEdit, onEdit, onDeactivate, onReacti
         {!hasPhoto && (
           <Building2 style={{ width: "36px", height: "36px", color: "rgba(255,255,255,0.75)" }} />
         )}
-        {/* Aktiv/Inaktiv pill overlay */}
         <div style={{ position: "absolute", top: "8px", right: "8px" }}>
           {location.isActive ? (
             <Badge style={{ fontSize: "0.65rem", backgroundColor: "#166534", color: "#fff", border: "none" }}>
@@ -144,8 +142,8 @@ export function LocationCard({ location, canEdit, onEdit, onDeactivate, onReacti
               <AlertDialogHeader>
                 <AlertDialogTitle>Unterkunft deaktivieren?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  „{location.name}" wird deaktiviert und steht für neue Einsätze nicht mehr zur Verfügung.
-                  Die Unterkunft kann später reaktiviert werden.
+                  "{location.name}" wird deaktiviert und steht für neue Einsätze nicht mehr zur Verfügung.
+                  Der Status kann über Bearbeiten wieder geändert werden.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -159,24 +157,6 @@ export function LocationCard({ location, canEdit, onEdit, onDeactivate, onReacti
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-        )}
-
-        {canEdit && !location.isActive && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onReactivate(location.id)}
-            style={{
-              gap: "0.3rem",
-              fontSize: "0.78rem",
-              flex: 1,
-              color: "#166534",
-              borderColor: "rgba(22,101,52,0.3)",
-            }}
-          >
-            <Power style={{ width: "12px", height: "12px" }} />
-            Reaktivieren
-          </Button>
         )}
       </CardFooter>
     </Card>
