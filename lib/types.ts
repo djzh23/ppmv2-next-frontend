@@ -38,6 +38,26 @@ export interface Location {
   capacity?: number
 }
 
+export interface LocationDetail extends Location {
+  notes?: string
+  isActive: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface CreateLocationRequest {
+  name: string
+  district: string
+  address?: string
+  description?: string
+  photoUrl?: string
+  contactPerson?: string
+  capacity?: number
+  notes?: string
+}
+
+export type UpdateLocationRequest = CreateLocationRequest
+
 // Returned by GET /api/shifts (list) — lighter than ShiftDetails
 export interface ShiftSummary {
   id: string
