@@ -56,7 +56,9 @@ export interface CreateLocationRequest {
   notes?: string
 }
 
-export type UpdateLocationRequest = CreateLocationRequest
+export interface UpdateLocationRequest extends CreateLocationRequest {
+  isActive?: boolean
+}
 
 // Returned by GET /api/shifts (list) — lighter than ShiftDetails
 export interface ShiftSummary {

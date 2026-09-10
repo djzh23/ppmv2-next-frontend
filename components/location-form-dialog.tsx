@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { LocationDetail, CreateLocationRequest } from "@/lib/types"
+import type { LocationDetail, CreateLocationRequest, UpdateLocationRequest } from "@/lib/types"
 import { apiPost, apiPut, ApiError } from "@/lib/apiClient"
 import {
   Dialog,
@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Switch } from "@/components/ui/switch"
 
 interface LocationFormDialogProps {
   open: boolean
@@ -37,6 +38,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
   }
 
   const [form, setForm] = useState<CreateLocationRequest>(emptyForm)
+  const [isActive, setIsActive] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; district?: string }>({})
@@ -54,8 +56,10 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
           capacity: editLocation.capacity,
           notes: editLocation.notes ?? "",
         })
+        setIsActive(editLocation.isActive)
       } else {
         setForm(emptyForm)
+        setIsActive(true)
       }
       setError(null)
       setFieldErrors({})
@@ -80,22 +84,32 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
     }
     setFieldErrors({})
 
-    const payload: CreateLocationRequest = {
-      name: form.name.trim(),
-      district: form.district.trim(),
-      address: form.address?.trim() || undefined,
-      description: form.description?.trim() || undefined,
-      photoUrl: form.photoUrl?.trim() || undefined,
-      contactPerson: form.contactPerson?.trim() || undefined,
-      capacity: form.capacity,
-      notes: form.notes?.trim() || undefined,
-    }
-
     setIsSubmitting(true)
     try {
       if (isEdit && editLocation) {
+        const payload: UpdateLocationRequest = {
+          name: form.name.trim(),
+          district: form.district.trim(),
+          address: form.address?.trim() || undefined,
+          description: form.description?.trim() || undefined,
+          photoUrl: form.photoUrl?.trim() || undefined,
+          contactPerson: form.contactPerson?.trim() || undefined,
+          capacity: form.capacity,
+          notes: form.notes?.trim() || undefined,
+          isActive,
+        }
         await apiPut<LocationDetail>(`/api/locations/${editLocation.id}`, payload)
       } else {
+        const payload: CreateLocationRequest = {
+          name: form.name.trim(),
+          district: form.district.trim(),
+          address: form.address?.trim() || undefined,
+          description: form.description?.trim() || undefined,
+          photoUrl: form.photoUrl?.trim() || undefined,
+          contactPerson: form.contactPerson?.trim() || undefined,
+          capacity: form.capacity,
+          notes: form.notes?.trim() || undefined,
+        }
         await apiPost<LocationDetail>("/api/locations", payload)
       }
       onSuccess()
@@ -114,7 +128,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent style={{ maxWidth: "520px" }}>
+      <DialogContent style={{ maxWidth: "520px", maxHeight: "90vh", overflowY: "auto" }}>
         <DialogHeader>
           <DialogTitle>{isEdit ? "Unterkunft bearbeiten" : "Neue Unterkunft"}</DialogTitle>
         </DialogHeader>
@@ -213,6 +227,32 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
               rows={2}
             />
           </div>
+
+          {isEdit && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.75rem 1rem",
+                borderRadius: "var(--radius)",
+                border: "0.5px solid hsl(var(--border))",
+                backgroundColor: "hsl(var(--muted) / 0.4)",
+              }}
+            >
+              <div>
+                <div style={{ fontSize: "0.85rem", fontWeight: 500 }}>Status</div>
+                <div style={{ fontSize: "0.75rem", color: "hsl(var(--muted-foreground))" }}>
+                  {isActive ? "Aktiv — steht für Einsätze zur Verfügung" : "Inaktiv — nicht für Einsätze verfügbar"}
+                </div>
+              </div>
+              <Switch
+                id="loc-isActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+            </div>
+          )}
 
           {error && (
             <p style={{ fontSize: "0.8rem", color: "hsl(var(--destructive))", margin: 0 }}>
