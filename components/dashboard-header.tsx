@@ -10,6 +10,7 @@ import { LogOut } from "lucide-react"
 const coordinatorNavLinks = [
   { href: "/coordinator/shifts", label: "Einsätze" },
   { href: "/coordinator/locations", label: "Unterkünfte" },
+  { href: "/coordinator/team", label: "Team" },
 ]
 
 interface DashboardHeaderProps {

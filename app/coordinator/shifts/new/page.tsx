@@ -6,7 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { RoleGuard } from "@/components/role-guard"
 import { LocationSelect } from "@/components/location-select"
-import { LeaderPicker } from "@/components/leader-picker"
+import { ParticipantPicker } from "@/components/participant-picker"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,11 +14,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiPost, apiPut } from "@/lib/apiClient"
-import type { CreateShiftRequest } from "@/lib/types"
-import { ParticipantRole } from "@/lib/types"
+import type { CreateShiftRequest, ParticipantRole } from "@/lib/types"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
 import { ArrowLeft } from "lucide-react"
+
+interface Participant {
+  userId: string
+  role: ParticipantRole
+}
 
 export default function NewShiftPage() {
   return (
@@ -40,15 +44,17 @@ function NewShiftContent() {
   const [endDate, setEndDate] = useState("")
   const [endTime, setEndTime] = useState("")
   const [locationId, setLocationId] = useState("")
-  const [leaderId, setLeaderId] = useState("")
+  const [participants, setParticipants] = useState<Participant[]>([])
+
+  const hasLeader = participants.some((p) => p.role === "Leader")
 
   async function handleSubmit(e: React.FormEvent, shouldPublish: boolean) {
     e.preventDefault()
 
-    if (!leaderId) {
+    if (!hasLeader) {
       toast({
         title: "Leader erforderlich",
-        description: "Bitte einen Leader für den Einsatz auswählen.",
+        description: "Bitte mindestens einen Leader für den Einsatz auswählen.",
         variant: "destructive",
       })
       return
@@ -62,16 +68,11 @@ function NewShiftContent() {
 
       const payload: CreateShiftRequest = {
         title,
-        description,
+        description: description || undefined,
         startAtUtc,
         endAtUtc,
         locationId,
-        participants: [
-          {
-            userId: leaderId,
-            role: ParticipantRole.Leader,
-          },
-        ],
+        participants,
       }
 
       const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
@@ -101,7 +102,7 @@ function NewShiftContent() {
     }
   }
 
-  const isFormValid = title && description && startDate && startTime && endDate && endTime && locationId && leaderId
+  const isFormValid = title && startDate && startTime && endDate && endTime && locationId && hasLeader
 
   return (
     <div
@@ -166,16 +167,13 @@ function NewShiftContent() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">
-                  Beschreibung <span className="text-destructive">*</span>
-                </Label>
+                <Label htmlFor="description">Beschreibung</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Beschreibung des Einsatzes"
+                  placeholder="Beschreibung des Einsatzes (optional)"
                   rows={4}
-                  required
                 />
               </div>
 
@@ -235,12 +233,11 @@ function NewShiftContent() {
 
               <LocationSelect value={locationId} onChange={setLocationId} required />
 
-              <LeaderPicker
-                value={leaderId}
-                onChange={setLeaderId}
+              <ParticipantPicker
                 locationId={locationId}
                 date={startDate}
-                required
+                value={participants}
+                onChange={setParticipants}
               />
 
               <div className="flex gap-3 pt-4">

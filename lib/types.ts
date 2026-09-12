@@ -129,7 +129,7 @@ export interface UserProfile {
 
 export interface CreateShiftRequest {
   title: string
-  description: string
+  description?: string
   startAtUtc: string
   endAtUtc: string
   locationId: string
@@ -137,4 +137,12 @@ export interface CreateShiftRequest {
     userId: string
     role: ParticipantRole
   }[]
+}
+
+export interface StaffMember {
+  userId: string
+  firstname: string
+  lastname: string
+  role: UserRoleName
+  locations: { id: string; name: string; district: string }[]
 }
