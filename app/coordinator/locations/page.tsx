@@ -233,9 +233,15 @@ function CoordinatorLocationsContent() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editLocation={editLocation}
-        onSuccess={async (saved) => {
-          await loadLocations()
-          if (saved) setFilter(saved.isActive ? "active" : "inactive")
+        onSuccess={(saved) => {
+          if (!saved) return
+          setLocations((prev) => {
+            const exists = prev.some((l) => l.id === saved.id)
+            return exists
+              ? prev.map((l) => (l.id === saved.id ? saved : l))
+              : [...prev, saved]
+          })
+          setFilter(saved.isActive ? "active" : "inactive")
         }}
       />
     </div>
