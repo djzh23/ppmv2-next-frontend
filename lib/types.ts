@@ -25,7 +25,7 @@ export interface User {
   roleId?: number
 
   createdAt?: string
-  status?: "Pending" | "Approved" | "Rejected" | "Deactivated"
+  status?: "Pending" | "Approved" | "Rejected"
 }
 
 export interface Location {
@@ -124,7 +124,7 @@ export interface UserProfile {
   lastname: string
   email: string
   role: UserRoleName
-  status: "Pending" | "Approved" | "Rejected" | "Deactivated"
+  status: "Pending" | "Approved" | "Rejected"
 }
 
 export interface CreateShiftRequest {

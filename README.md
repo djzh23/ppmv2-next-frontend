@@ -61,15 +61,30 @@ The backend is designed to be client-agnostic — this Next.js app is one possib
 **Prerequisites:** Node.js 18+, running PPM V2 backend (default: `http://localhost:5105`)
 
 ```bash
+# 1. Install dependencies
 npm install
+
+# 2. Create environment file
+cp .env.example .env.local
+
+# 3. Start dev server
 npm run dev
 ```
 
-Create a `.env.local` file:
+`.env.local` requires one variable:
 
 ```env
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5105
 ```
+
+The app connects to the live API by default if the variable is not set. Demo accounts (password: `Pass123$`):
+
+| Email | Role |
+|---|---|
+| `admin@test.com` | Admin |
+| `koord1@test.com` | Coordinator |
+| `fest1@test.com` | Festmitarbeiter |
+| `hon1@test.com` | Honorarkraft |
 
 ## Roadmap
 
