@@ -44,8 +44,11 @@ function CoordinatorLocationsContent() {
   async function loadLocations() {
     setLoadError(null)
     try {
-      const data = await apiGet<LocationDetail[]>("/api/locations")
-      setLocations(data)
+      const list = await apiGet<{ id: string; name: string; district: string }[]>("/api/locations")
+      const details = await Promise.all(
+        list.map((l) => apiGet<LocationDetail>(`/api/locations/${l.id}`))
+      )
+      setLocations(details)
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Unterkünfte konnten nicht geladen werden.")
       setLocations([])
