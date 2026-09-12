@@ -32,7 +32,7 @@ function LeaderInboxContent() {
   async function loadShifts() {
     setLoadError(null)
     try {
-      // TODO: filter by assigned user once GET /api/shifts supports ?userId= or a dedicated endpoint
+      // Backend filters automatically: Festmitarbeiter/Honorarkraft only see their own assigned shifts
       const data = await apiGet<ShiftSummary[]>("/api/shifts")
       setShifts(data)
     } catch (error) {
