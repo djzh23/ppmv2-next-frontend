@@ -41,17 +41,22 @@ function CoordinatorLocationsContent() {
 
   useEffect(() => { loadLocations() }, [])
 
-  async function loadLocations() {
+  async function loadLocations(): Promise<LocationDetail[]> {
     setLoadError(null)
     try {
       const list = await apiGet<{ id: string; name: string; district: string }[]>("/api/locations")
-      const details = await Promise.all(
+      const results = await Promise.allSettled(
         list.map((l) => apiGet<LocationDetail>(`/api/locations/${l.id}`))
       )
+      const details = results
+        .filter((r): r is PromiseFulfilledResult<LocationDetail> => r.status === "fulfilled")
+        .map((r) => r.value)
       setLocations(details)
+      return details
     } catch (err) {
       setLoadError(err instanceof Error ? err.message : "Unterkünfte konnten nicht geladen werden.")
       setLocations([])
+      return []
     } finally {
       setIsLoading(false)
     }
@@ -228,7 +233,10 @@ function CoordinatorLocationsContent() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editLocation={editLocation}
-        onSuccess={() => loadLocations()}
+        onSuccess={async (saved) => {
+          await loadLocations()
+          if (saved) setFilter(saved.isActive ? "active" : "inactive")
+        }}
       />
     </div>
   )
