@@ -44,7 +44,7 @@ function CoordinatorLocationsContent() {
   async function loadLocations(): Promise<LocationDetail[]> {
     setLoadError(null)
     try {
-      const list = await apiGet<{ id: string; name: string; district: string }[]>("/api/locations")
+      const list = await apiGet<{ id: string; name: string; district: string; isActive: boolean }[]>("/api/locations?includeInactive=true")
       const results = await Promise.allSettled(
         list.map((l) => apiGet<LocationDetail>(`/api/locations/${l.id}`))
       )
