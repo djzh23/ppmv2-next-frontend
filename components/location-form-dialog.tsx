@@ -135,7 +135,7 @@ export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess
         </DialogHeader>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem", marginTop: "0.25rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div className="grid gap-3 sm:grid-cols-2">
             <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem" }}>
               <Label htmlFor="loc-name">Name *</Label>
               <Input

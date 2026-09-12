@@ -61,9 +61,11 @@ export function DashboardFooter() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: "44px",
+          minHeight: "44px",
+          paddingTop: "0.6rem",
+          paddingBottom: "0.6rem",
           flexWrap: "wrap",
-          gap: "0.5rem",
+          gap: "0.4rem",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>

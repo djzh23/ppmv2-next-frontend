@@ -112,6 +112,7 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
             {user?.email && (
               <Link
                 href="/profile"
+                className="hidden sm:block"
                 style={{
                   fontSize: "0.75rem",
                   color: "rgba(255,255,255,0.75)",
@@ -162,7 +163,7 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
 
         {/* Coordinator sub-nav */}
         {isCoordinator && (
-          <div style={{ display: "flex", gap: "0.25rem", paddingBottom: "0.5rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", paddingBottom: "0.5rem" }}>
             {coordinatorNavLinks.map(({ href, label }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/")
               return (
