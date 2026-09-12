@@ -95,7 +95,38 @@ async function fetchWithAuth(endpoint: string, options: RequestInit = {}): Promi
 
     if (response.status === 401) {
       if (isBrowser()) {
+        const refreshToken = localStorage.getItem("refreshToken")
+        // Avoid infinite loop: never attempt refresh on the refresh endpoint itself
+        if (refreshToken && endpoint !== "/api/auth/refresh") {
+          try {
+            const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ refreshToken }),
+              mode: "cors",
+            })
+            if (refreshResponse.ok) {
+              const data = (await refreshResponse.json()) as { token: string; refreshToken: string }
+              localStorage.setItem("authToken", data.token)
+              localStorage.setItem("refreshToken", data.refreshToken)
+              // Retry the original request with the new access token
+              const retryHeaders = new Headers(options.headers)
+              retryHeaders.set("Authorization", `Bearer ${data.token}`)
+              if (hasBody && !retryHeaders.has("Content-Type")) {
+                retryHeaders.set("Content-Type", "application/json")
+              }
+              return fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                headers: retryHeaders,
+                mode: "cors",
+              })
+            }
+          } catch {
+            // Refresh request itself failed (network error, etc.) -- fall through to logout
+          }
+        }
         localStorage.removeItem("authToken")
+        localStorage.removeItem("refreshToken")
         localStorage.removeItem("authUser")
         window.location.href = "/auth/login"
       }

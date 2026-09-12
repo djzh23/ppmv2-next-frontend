@@ -46,6 +46,7 @@ export async function login(email: string, password: string): Promise<AuthRespon
   }
 
   localStorage.setItem("authToken", response.token)
+  localStorage.setItem("refreshToken", response.refreshToken)
   localStorage.setItem("authUser", JSON.stringify(response))
 
   return response
@@ -61,7 +62,13 @@ export async function register(firstname: string, lastname: string, email: strin
 }
 
 export function logout(): void {
+  const refreshToken = typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null
+  if (refreshToken) {
+    // Fire-and-forget: revoke token server-side, don't block local logout on network errors
+    apiPost("/api/auth/logout", { refreshToken }).catch(() => {})
+  }
   localStorage.removeItem("authToken")
+  localStorage.removeItem("refreshToken")
   localStorage.removeItem("authUser")
   window.location.href = "/auth/login"
 }

@@ -6,6 +6,7 @@ export type ConfirmationStatus = "Invited" | "Accepted" | "Declined"
 
 export interface AuthResponse {
   token: string
+  refreshToken: string
   userId: string
   email: string
   role?: UserRoleName
