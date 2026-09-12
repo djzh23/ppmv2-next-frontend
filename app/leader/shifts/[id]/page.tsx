@@ -29,11 +29,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 
-export default function HonorarkraftShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function LeaderShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
-    <RoleGuard allowedRoles={["Honorarkraft"]}>
-      <HonorarkraftShiftDetailsContent shiftId={id} />
+    <RoleGuard allowedRoles={["Festmitarbeiter", "Honorarkraft"]}>
+      <LeaderShiftDetailsContent shiftId={id} />
     </RoleGuard>
   )
 }
@@ -64,7 +64,7 @@ function confirmationBadge(status: ConfirmationStatus | undefined) {
   )
 }
 
-function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
+function LeaderShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
   const [shift, setShift] = useState<ShiftDetails | null>(null)
@@ -98,8 +98,8 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
       toast({
         title: response === "Accepted" ? "Einsatz angenommen" : "Einsatz abgelehnt",
         description: response === "Accepted"
-          ? "Du hast diesen Einsatz erfolgreich angenommen."
-          : "Du hast diesen Einsatz abgelehnt.",
+          ? "Du hast diesen Einsatz als Leader angenommen."
+          : "Du hast die Einladung abgelehnt.",
       })
       await loadShift()
     } catch (error) {
@@ -116,7 +116,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <DashboardHeader section="Honorarkraft" isLoading />
+        <DashboardHeader section="Leader" isLoading />
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
         </div>
@@ -128,7 +128,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
   if (!shift) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <DashboardHeader section="Honorarkraft" />
+        <DashboardHeader section="Leader" />
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "hsl(var(--muted-foreground))" }}>
           Einsatz nicht gefunden
         </div>
@@ -150,7 +150,6 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
         overflow: "hidden",
       }}
     >
-      {/* Grid-Hintergrund */}
       <div
         aria-hidden="true"
         style={{
@@ -166,7 +165,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
         }}
       />
 
-      <DashboardHeader section="Honorarkraft" isLoading={isLoading || isResponding} />
+      <DashboardHeader section="Leader" isLoading={isLoading || isResponding} />
 
       <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
@@ -187,11 +186,10 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
             <ReadinessBadge readiness={shift.readiness} />
           </div>
         </div>
+
         <div className="grid gap-6 max-w-3xl mx-auto">
           <Card>
-            <CardHeader>
-              <CardTitle>Zeitplan</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Zeitplan</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center">
                 <Calendar className="h-5 w-5 mr-3 text-muted-foreground" />
@@ -211,9 +209,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Standort</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Standort</CardTitle></CardHeader>
             <CardContent>
               <div className="flex items-center">
                 <MapPin className="h-5 w-5 mr-3 text-muted-foreground" />
@@ -255,25 +251,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
             </CardContent>
           </Card>
 
-          {shift.missingRequirements && shift.missingRequirements.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-amber-600">Fehlende Voraussetzungen</CardTitle>
-                <CardDescription>Bitte diese Punkte vor der Annahme prüfen</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  {shift.missingRequirements.map((req, idx) => (
-                    <li key={idx} className="text-muted-foreground">
-                      {req}
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          )}
-
-          {myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval" && (
+          {myParticipant?.confirmationStatus === "Invited" && (
             <div style={{ display: "flex", gap: "0.75rem" }}>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -285,7 +263,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Einsatz annehmen?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Du bestätigst deine Teilnahme an diesem Einsatz.
+                      Du bestätigst deine Teilnahme als Leader dieses Einsatzes.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -305,7 +283,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Einsatz ablehnen?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Du lehnst die Einladung zu diesem Einsatz ab.
+                      Du lehnst die Einladung als Leader ab.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -321,7 +299,7 @@ function HonorarkraftShiftDetailsContent({ shiftId }: { shiftId: string }) {
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  Du nimmst an diesem aktiven Einsatz teil
+                  Du führst diesen aktiven Einsatz als Leader
                 </p>
               </CardContent>
             </Card>

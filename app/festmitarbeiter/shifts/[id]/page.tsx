@@ -115,7 +115,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   async function handleRespond(response: "Accepted" | "Declined") {
     setIsResponding(true)
     try {
-      await apiPut(`/api/shifts/${shiftId}/participants/${user?.userId}/respond`, { response })
+      await apiPut(`/api/shifts/${shiftId}/respond`, { accept: response === "Accepted" })
       toast({
         title: response === "Accepted" ? "Einsatz angenommen" : "Einsatz abgelehnt",
         description: response === "Accepted"

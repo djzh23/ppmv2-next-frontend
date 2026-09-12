@@ -69,6 +69,8 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const [shift, setShift] = useState<ShiftDetails | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isApproving, setIsApproving] = useState(false)
+  const [isStarting, setIsStarting] = useState(false)
+  const [isCompleting, setIsCompleting] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
@@ -107,6 +109,32 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
       })
     } finally {
       setIsApproving(false)
+    }
+  }
+
+  async function handleStart() {
+    setIsStarting(true)
+    try {
+      await apiPut(`/api/shifts/${shiftId}/start`)
+      toast({ title: "Einsatz gestartet", description: "Der Einsatz ist jetzt aktiv." })
+      await loadShift()
+    } catch (error) {
+      toast({ title: "Fehler", description: error instanceof Error ? error.message : "Einsatz konnte nicht gestartet werden.", variant: "destructive" })
+    } finally {
+      setIsStarting(false)
+    }
+  }
+
+  async function handleComplete() {
+    setIsCompleting(true)
+    try {
+      await apiPut(`/api/shifts/${shiftId}/complete`)
+      toast({ title: "Einsatz abgeschlossen", description: "Der Einsatz wurde erfolgreich abgeschlossen." })
+      await loadShift()
+    } catch (error) {
+      toast({ title: "Fehler", description: error instanceof Error ? error.message : "Einsatz konnte nicht abgeschlossen werden.", variant: "destructive" })
+    } finally {
+      setIsCompleting(false)
     }
   }
 
@@ -155,8 +183,10 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
   }
 
   const canApprove = shift.status === "Draft" || shift.status === "PendingApproval"
+  const canStart = shift.status === "Planned"
+  const canComplete = shift.status === "Active"
   const canCancel = shift.status !== "Completed" && shift.status !== "Cancelled"
-  const isBusy = isApproving || isCancelling
+  const isBusy = isApproving || isStarting || isCompleting || isCancelling
 
   return (
     <div
@@ -290,7 +320,7 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
             </Card>
           )}
 
-          {(canApprove || canCancel) && (
+          {(canApprove || canStart || canComplete || canCancel) && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {canApprove && (
                 <AlertDialog>
@@ -309,6 +339,50 @@ function ShiftDetailsContent({ shiftId }: { shiftId: string }) {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Abbrechen</AlertDialogCancel>
                       <AlertDialogAction onClick={handleApprove}>Genehmigen</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
+              {canStart && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button disabled={isBusy} className="w-full">
+                      {isStarting ? "Wird gestartet..." : "Starten"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Einsatz starten?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Der Einsatz wird auf „Aktiv" gesetzt. Alle Teilnehmer sind informiert.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleStart}>Starten</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+
+              {canComplete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button disabled={isBusy} className="w-full">
+                      {isCompleting ? "Wird abgeschlossen..." : "Abschließen"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Einsatz abschließen?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Der Einsatz wird als abgeschlossen markiert. Diese Aktion kann nicht rückgängig gemacht werden.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleComplete}>Abschließen</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
