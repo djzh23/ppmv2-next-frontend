@@ -20,7 +20,7 @@ interface LocationFormDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   editLocation?: LocationDetail | null
-  onSuccess: (saved: LocationDetail) => void
+  onSuccess: (saved?: LocationDetail) => void
 }
 
 export function LocationFormDialog({ open, onOpenChange, editLocation, onSuccess }: LocationFormDialogProps) {

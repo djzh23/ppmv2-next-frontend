@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { RoleGuard } from "@/components/role-guard"
 import { LocationCard } from "@/components/location-card"
 import { LocationFormDialog } from "@/components/location-form-dialog"
-import { apiGet, apiDelete } from "@/lib/apiClient"
+import { apiGet } from "@/lib/apiClient"
 import type { LocationDetail } from "@/lib/types"
 import { getAuthUser } from "@/lib/auth"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -54,15 +54,6 @@ function CoordinatorLocationsContent() {
       setLocations([])
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  async function handleDeactivate(id: string) {
-    try {
-      await apiDelete(`/api/locations/${id}`)
-      setLocations((prev) => prev.map((l) => l.id === id ? { ...l, isActive: false } : l))
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Deaktivierung fehlgeschlagen.")
     }
   }
 
@@ -225,7 +216,6 @@ function CoordinatorLocationsContent() {
                 location={loc}
                 canEdit={canEdit}
                 onEdit={openEdit}
-                onDeactivate={handleDeactivate}
               />
             ))}
           </div>
@@ -238,14 +228,7 @@ function CoordinatorLocationsContent() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         editLocation={editLocation}
-        onSuccess={(saved) => {
-          setLocations((prev) => {
-            const exists = prev.some((l) => l.id === saved.id)
-            return exists
-              ? prev.map((l) => l.id === saved.id ? saved : l)
-              : [...prev, saved]
-          })
-        }}
+        onSuccess={() => loadLocations()}
       />
     </div>
   )

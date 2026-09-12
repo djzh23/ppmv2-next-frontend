@@ -5,29 +5,16 @@ import type { LocationDetail } from "@/lib/types"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { Building2, MapPin, Users, Phone, Pencil, PowerOff, ArrowRight } from "lucide-react"
+import { Building2, MapPin, Users, Phone, Pencil, ArrowRight } from "lucide-react"
 
 interface LocationCardProps {
   location: LocationDetail
   canEdit: boolean
   onEdit: (location: LocationDetail) => void
-  onDeactivate: (id: string) => void
 }
 
-export function LocationCard({ location, canEdit, onEdit, onDeactivate }: LocationCardProps) {
+export function LocationCard({ location, canEdit, onEdit }: LocationCardProps) {
   const router = useRouter()
-
   const hasPhoto = !!location.photoUrl
 
   return (
@@ -97,7 +84,7 @@ export function LocationCard({ location, canEdit, onEdit, onDeactivate }: Locati
         )}
       </CardContent>
 
-      <CardFooter style={{ gap: "0.4rem", paddingTop: "0.75rem", flexWrap: "wrap" }}>
+      <CardFooter style={{ gap: "0.4rem", paddingTop: "0.75rem" }}>
         <Button
           variant="outline"
           size="sm"
@@ -118,45 +105,6 @@ export function LocationCard({ location, canEdit, onEdit, onDeactivate }: Locati
             <Pencil style={{ width: "12px", height: "12px" }} />
             Bearbeiten
           </Button>
-        )}
-
-        {canEdit && location.isActive && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                style={{
-                  gap: "0.3rem",
-                  fontSize: "0.78rem",
-                  flex: 1,
-                  color: "hsl(var(--destructive))",
-                  borderColor: "hsl(var(--destructive) / 0.3)",
-                }}
-              >
-                <PowerOff style={{ width: "12px", height: "12px" }} />
-                Deaktivieren
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Unterkunft deaktivieren?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  "{location.name}" wird deaktiviert und steht für neue Einsätze nicht mehr zur Verfügung.
-                  Der Status kann über Bearbeiten wieder geändert werden.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => onDeactivate(location.id)}
-                  style={{ backgroundColor: "hsl(var(--destructive))", color: "white" }}
-                >
-                  Deaktivieren
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         )}
       </CardFooter>
     </Card>
