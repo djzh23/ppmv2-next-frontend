@@ -7,15 +7,15 @@ import { RoleBadge } from "@/components/role-badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { apiGet, apiPut } from "@/lib/apiClient"
+import { apiGet, apiPost, apiPut } from "@/lib/apiClient"
 import { getAuthUser } from "@/lib/auth"
-import type { ShiftDetails, ConfirmationStatus } from "@/lib/types"
-import { participantDisplayName } from "@/lib/types"
+import type { ShiftDetails, ConfirmationStatus, AvailableStaff } from "@/lib/types"
+import { participantDisplayName, ParticipantRole } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
 import { ReadinessBadge } from "@/components/readiness-badge"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
-import { ArrowLeft, Calendar, MapPin, Users } from "lucide-react"
+import { ArrowLeft, Calendar, MapPin, Users, UserPlus } from "lucide-react"
 import { format } from "date-fns"
 import {
   AlertDialog,
@@ -28,6 +28,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 export default function FestmitarbeiterShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -64,6 +72,11 @@ function confirmationBadge(status: ConfirmationStatus | undefined) {
   )
 }
 
+const PARTICIPANT_ROLES = [
+  { value: ParticipantRole.Member, label: "Mitglied" },
+  { value: ParticipantRole.Support, label: "Unterstützung" },
+] as const
+
 function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -71,7 +84,16 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const [isLoading, setIsLoading] = useState(true)
   const [isProposing, setIsProposing] = useState(false)
   const [isResponding, setIsResponding] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
   const user = getAuthUser()
+
+  // Add participant dialog state
+  const [showAddParticipant, setShowAddParticipant] = useState(false)
+  const [availableStaff, setAvailableStaff] = useState<AvailableStaff[]>([])
+  const [loadingStaff, setLoadingStaff] = useState(false)
+  const [selectedUserId, setSelectedUserId] = useState<string>("")
+  const [selectedRole, setSelectedRole] = useState<typeof ParticipantRole.Member | typeof ParticipantRole.Support>(ParticipantRole.Member)
+  const [isAddingParticipant, setIsAddingParticipant] = useState(false)
 
   useEffect(() => {
     loadShift()
@@ -134,6 +156,71 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
     }
   }
 
+  async function handleCancel() {
+    setIsCancelling(true)
+    try {
+      await apiPut(`/api/shifts/${shiftId}/cancel`)
+      toast({
+        title: "Einsatz abgesagt",
+        description: "Der Einsatz wurde erfolgreich abgesagt.",
+      })
+      router.push("/festmitarbeiter/inbox")
+    } catch (error) {
+      toast({
+        title: "Fehler beim Absagen",
+        description: error instanceof Error ? error.message : "Der Einsatz konnte nicht abgesagt werden.",
+        variant: "destructive",
+      })
+      setIsCancelling(false)
+    }
+  }
+
+  async function openAddParticipantDialog() {
+    if (!shift) return
+    setShowAddParticipant(true)
+    setSelectedUserId("")
+    setSelectedRole(ParticipantRole.Member)
+    setLoadingStaff(true)
+    try {
+      const date = new Date(shift.startAtUtc)
+      const dateStr = date.toISOString().split("T")[0]
+      const locationId = shift.location?.id ?? ""
+      const staff = await apiGet<AvailableStaff[]>(
+        `/api/locations/${locationId}/available-staff?date=${dateStr}`
+      )
+      // Filter out existing participants
+      const existingIds = new Set(shift.participants.map((p) => p.userId))
+      setAvailableStaff(staff.filter((s) => !existingIds.has(s.userId)))
+    } catch {
+      toast({ title: "Mitarbeiter konnten nicht geladen werden.", variant: "destructive" })
+      setShowAddParticipant(false)
+    } finally {
+      setLoadingStaff(false)
+    }
+  }
+
+  async function handleAddParticipant() {
+    if (!selectedUserId) return
+    setIsAddingParticipant(true)
+    try {
+      await apiPost(`/api/shifts/${shiftId}/participants`, {
+        userId: selectedUserId,
+        role: selectedRole,
+      })
+      toast({ title: "Mitglied hinzugefügt." })
+      setShowAddParticipant(false)
+      await loadShift()
+    } catch (error) {
+      toast({
+        title: "Fehler beim Hinzufügen",
+        description: error instanceof Error ? error.message : "Mitglied konnte nicht hinzugefügt werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsAddingParticipant(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
@@ -159,7 +246,9 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   }
 
   const myParticipant = shift.participants.find((p) => p.userId === user?.userId)
-  const isBusy = isProposing || isResponding
+  const isLeader = myParticipant?.role === "Leader"
+  const canModify = shift.status === "Draft" || shift.status === "PendingApproval"
+  const isBusy = isProposing || isResponding || isCancelling
 
   return (
     <div
@@ -190,12 +279,15 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
 
       <DashboardHeader section="Festmitarbeiter" isLoading={isLoading || isBusy} />
 
-      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
           <ArrowLeft className="h-4 w-4" />
           Zurück zur Inbox
         </Button>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+        <div
+          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+          style={{ marginBottom: "1.5rem" }}
+        >
           <div>
             <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
               {shift.title}
@@ -204,7 +296,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
               <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>{shift.description}</p>
             )}
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
             <StatusBadge status={shift.status} />
             <ReadinessBadge readiness={shift.readiness} />
           </div>
@@ -250,9 +342,23 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Team</CardTitle>
-              <CardDescription>{shift.participants.length} Teilnehmer</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <div>
+                <CardTitle>Team</CardTitle>
+                <CardDescription>{shift.participants.length} Teilnehmer</CardDescription>
+              </div>
+              {isLeader && canModify && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={openAddParticipantDialog}
+                  disabled={isBusy}
+                  style={{ gap: "0.35rem", fontSize: "0.78rem" }}
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Mitglied hinzufügen
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -318,7 +424,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
           )}
 
           {myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval" && (
-            <div style={{ display: "flex", gap: "0.75rem" }}>
+            <div className="flex flex-col sm:flex-row gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button disabled={isBusy} className="flex-1" size="lg">
@@ -361,6 +467,29 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
             </div>
           )}
 
+          {/* Leader-only: Cancel shift */}
+          {isLeader && canModify && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isBusy} className="w-full">
+                  {isCancelling ? "Wird abgesagt..." : "Einsatz absagen"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Einsatz absagen?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Der Einsatz wird unwiderruflich abgesagt. Diese Aktion kann nicht rückgängig gemacht werden.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleCancel}>Absagen</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           {shift.status === "Active" && myParticipant && (
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
@@ -374,6 +503,92 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
       </main>
 
       <DashboardFooter />
+
+      {/* Add participant dialog */}
+      <Dialog open={showAddParticipant} onOpenChange={(open) => { if (!open) setShowAddParticipant(false) }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Mitglied hinzufügen</DialogTitle>
+            <DialogDescription>
+              Verfügbare Mitarbeiter für diesen Standort und Termin
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingStaff ? (
+            <div style={{ textAlign: "center", padding: "2rem", color: "hsl(var(--muted-foreground))", fontSize: "0.85rem" }}>
+              Laden...
+            </div>
+          ) : availableStaff.length === 0 ? (
+            <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", textAlign: "center", padding: "1rem 0" }}>
+              Keine verfügbaren Mitarbeiter gefunden.
+            </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div>
+                <label style={{ fontSize: "0.8rem", fontWeight: 500, color: "hsl(var(--foreground))", display: "block", marginBottom: "0.4rem" }}>
+                  Mitarbeiter
+                </label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "0.45rem 0.75rem",
+                    fontSize: "0.85rem",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "var(--radius)",
+                    backgroundColor: "hsl(var(--background))",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  <option value="">Bitte auswählen...</option>
+                  {availableStaff.map((s) => (
+                    <option key={s.userId} value={s.userId}>
+                      {s.lastname}, {s.firstname}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: "0.8rem", fontWeight: 500, color: "hsl(var(--foreground))", display: "block", marginBottom: "0.4rem" }}>
+                  Rolle
+                </label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value as typeof ParticipantRole.Member | typeof ParticipantRole.Support)}
+                  style={{
+                    width: "100%",
+                    padding: "0.45rem 0.75rem",
+                    fontSize: "0.85rem",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "var(--radius)",
+                    backgroundColor: "hsl(var(--background))",
+                    color: "hsl(var(--foreground))",
+                  }}
+                >
+                  {PARTICIPANT_ROLES.map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setShowAddParticipant(false)} disabled={isAddingParticipant} className="w-full sm:w-auto">
+              Abbrechen
+            </Button>
+            <Button
+              onClick={handleAddParticipant}
+              disabled={!selectedUserId || isAddingParticipant || loadingStaff}
+              className="w-full sm:w-auto"
+            >
+              {isAddingParticipant ? "Wird hinzugefügt..." : "Hinzufügen"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -71,7 +71,7 @@ function HonorarkraftInboxContent() {
       <DashboardHeader section="Honorarkraft" isLoading={isLoading} />
 
       <main
-        className="container mx-auto px-6 py-8"
+        className="container mx-auto px-3 sm:px-6 py-8"
         style={{ position: "relative", zIndex: 1, flex: 1 }}
       >
         <div style={{ marginBottom: "2rem" }}>

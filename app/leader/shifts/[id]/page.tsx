@@ -167,12 +167,15 @@ function LeaderShiftDetailsContent({ shiftId }: { shiftId: string }) {
 
       <DashboardHeader section="Leader" isLoading={isLoading || isResponding} />
 
-      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
           <ArrowLeft className="h-4 w-4" />
           Zurück zur Inbox
         </Button>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+        <div
+          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3"
+          style={{ marginBottom: "1.5rem" }}
+        >
           <div>
             <h1 style={{ fontSize: "1.5rem", fontWeight: 600, letterSpacing: "-0.02em", color: "hsl(var(--foreground))", margin: 0 }}>
               {shift.title}
@@ -181,7 +184,7 @@ function LeaderShiftDetailsContent({ shiftId }: { shiftId: string }) {
               <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))", marginTop: "0.25rem" }}>{shift.description}</p>
             )}
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
+          <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
             <StatusBadge status={shift.status} />
             <ReadinessBadge readiness={shift.readiness} />
           </div>
@@ -252,7 +255,7 @@ function LeaderShiftDetailsContent({ shiftId }: { shiftId: string }) {
           </Card>
 
           {myParticipant?.confirmationStatus === "Invited" && (
-            <div style={{ display: "flex", gap: "0.75rem" }}>
+            <div className="flex flex-col sm:flex-row gap-3">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button disabled={isResponding} className="flex-1" size="lg">

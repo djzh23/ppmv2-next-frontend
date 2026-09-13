@@ -50,7 +50,7 @@ function LeaderInboxContent() {
     <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", backgroundColor: "hsl(var(--background))" }}>
       <DashboardHeader section="Leader" isLoading={isLoading} />
 
-      <main className="container mx-auto px-6 py-8" style={{ flex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ flex: 1 }}>
         <Card>
           <CardHeader>
             <CardTitle>My Einsätze</CardTitle>

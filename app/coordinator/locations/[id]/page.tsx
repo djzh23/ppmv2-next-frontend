@@ -105,7 +105,7 @@ function LocationDetailContent() {
 
       <DashboardHeader section="Unterkünfte" isLoading={isLoading} />
 
-      <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1, maxWidth: "780px" }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1, maxWidth: "780px" }}>
 
         {/* Zurück + Aktionen */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>

@@ -4,10 +4,21 @@ import { useEffect, useState } from "react"
 import { RoleGuard } from "@/components/role-guard"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
-import { apiGet } from "@/lib/apiClient"
+import { apiGet, apiPut } from "@/lib/apiClient"
 import type { StaffMember } from "@/lib/types"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import { useToast } from "@/hooks/use-toast"
+import { Users, Pencil } from "lucide-react"
 
 export default function CoordinatorTeamPage() {
   return (
@@ -28,11 +39,26 @@ function roleColor(role: string): { color: string; bg: string } {
   return { color: "#92400e", bg: "#fef3c7" }
 }
 
+interface LocationListItem {
+  id: string
+  name: string
+  district: string
+  isActive: boolean
+}
+
 function CoordinatorTeamContent() {
+  const { toast } = useToast()
   const [staff, setStaff] = useState<StaffMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
+
+  // Sheet state
+  const [editingMember, setEditingMember] = useState<StaffMember | null>(null)
+  const [allLocations, setAllLocations] = useState<LocationListItem[]>([])
+  const [selectedLocationIds, setSelectedLocationIds] = useState<Set<string>>(new Set())
+  const [isSaving, setIsSaving] = useState(false)
+  const [locationsLoaded, setLocationsLoaded] = useState(false)
 
   useEffect(() => { loadStaff() }, [])
 
@@ -46,6 +72,71 @@ function CoordinatorTeamContent() {
       setLoadError(err instanceof Error ? err.message : "Team konnte nicht geladen werden.")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function openEditSheet(member: StaffMember) {
+    setEditingMember(member)
+    setSelectedLocationIds(new Set(member.locations.map((l) => l.id)))
+
+    if (!locationsLoaded) {
+      try {
+        const data = await apiGet<LocationListItem[]>("/api/locations")
+        setAllLocations(data.filter((l) => l.isActive))
+        setLocationsLoaded(true)
+      } catch {
+        toast({ title: "Standorte konnten nicht geladen werden.", variant: "destructive" })
+      }
+    }
+  }
+
+  function closeSheet() {
+    setEditingMember(null)
+  }
+
+  function toggleLocation(locationId: string) {
+    setSelectedLocationIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(locationId)) {
+        next.delete(locationId)
+      } else {
+        next.add(locationId)
+      }
+      return next
+    })
+  }
+
+  async function handleSaveLocations() {
+    if (!editingMember) return
+    setIsSaving(true)
+    try {
+      await apiPut(`/api/users/${editingMember.userId}/locations`, {
+        locationIds: Array.from(selectedLocationIds),
+      })
+
+      // Optimistic update: replace the member's locations in state
+      const updatedLocations = allLocations
+        .filter((l) => selectedLocationIds.has(l.id))
+        .map((l) => ({ id: l.id, name: l.name, district: l.district }))
+
+      setStaff((prev) =>
+        prev.map((m) =>
+          m.userId === editingMember.userId
+            ? { ...m, locations: updatedLocations }
+            : m
+        )
+      )
+
+      toast({ title: "Zuweisungen gespeichert." })
+      closeSheet()
+    } catch (err) {
+      toast({
+        title: "Fehler beim Speichern",
+        description: err instanceof Error ? err.message : "Zuweisungen konnten nicht gespeichert werden.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -91,7 +182,7 @@ function CoordinatorTeamContent() {
 
       <DashboardHeader section="Team" isLoading={isLoading} />
 
-      <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
 
         {loadError && (
           <div
@@ -200,18 +291,18 @@ function CoordinatorTeamContent() {
               backgroundColor: "hsl(var(--card))",
             }}
           >
-            {/* Table header */}
+            {/* Table header - hidden on very small screens */}
             <div
+              className="hidden sm:grid"
               style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 1fr 3fr",
+                gridTemplateColumns: "2fr 1fr 3fr auto",
                 padding: "0.5rem 1rem",
                 backgroundColor: "hsl(var(--muted) / 0.5)",
                 borderBottom: "1px solid hsl(var(--border))",
               }}
             >
-              {["Name", "Rolle", "Standorte"].map((h) => (
-                <span key={h} style={{ fontSize: "0.72rem", fontWeight: 600, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              {["Name", "Rolle", "Standorte", ""].map((h, idx) => (
+                <span key={idx} style={{ fontSize: "0.72rem", fontWeight: 600, color: "hsl(var(--muted-foreground))", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   {h}
                 </span>
               ))}
@@ -224,60 +315,131 @@ function CoordinatorTeamContent() {
                 <div
                   key={s.userId}
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 3fr",
-                    padding: "0.75rem 1rem",
-                    alignItems: "center",
                     borderTop: i > 0 ? "1px solid hsl(var(--border))" : undefined,
-                    gap: "0.5rem",
                   }}
                 >
-                  {/* Name */}
-                  <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
-                    {s.lastname}, {s.firstname}
-                  </span>
-
-                  {/* Role badge */}
-                  <span
+                  {/* Desktop row */}
+                  <div
+                    className="hidden sm:grid"
                     style={{
-                      display: "inline-block",
-                      fontSize: "0.72rem",
-                      fontWeight: 500,
-                      color,
-                      backgroundColor: bg,
-                      padding: "0.15rem 0.55rem",
-                      borderRadius: "999px",
-                      whiteSpace: "nowrap",
+                      gridTemplateColumns: "2fr 1fr 3fr auto",
+                      padding: "0.75rem 1rem",
+                      alignItems: "center",
+                      gap: "0.5rem",
                     }}
                   >
-                    {roleLabel(s.role)}
-                  </span>
+                    <span style={{ fontSize: "0.875rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
+                      {s.lastname}, {s.firstname}
+                    </span>
 
-                  {/* Locations */}
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
-                    {s.locations.length === 0 ? (
-                      <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted-foreground))" }}>
-                        Kein Standort zugewiesen
-                      </span>
-                    ) : (
-                      s.locations.map((l) => (
-                        <span
-                          key={l.id}
-                          style={{
-                            fontSize: "0.72rem",
-                            padding: "0.15rem 0.5rem",
-                            borderRadius: "999px",
-                            border: "1px solid hsl(var(--border))",
-                            backgroundColor: "hsl(var(--muted) / 0.4)",
-                            color: "hsl(var(--foreground))",
-                            whiteSpace: "nowrap",
-                          }}
-                          title={l.district}
-                        >
-                          {l.name}
+                    <span
+                      style={{
+                        display: "inline-block",
+                        fontSize: "0.72rem",
+                        fontWeight: 500,
+                        color,
+                        backgroundColor: bg,
+                        padding: "0.15rem 0.55rem",
+                        borderRadius: "999px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {roleLabel(s.role)}
+                    </span>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                      {s.locations.length === 0 ? (
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted-foreground))" }}>
+                          Kein Standort zugewiesen
                         </span>
-                      ))
-                    )}
+                      ) : (
+                        s.locations.map((l) => (
+                          <span
+                            key={l.id}
+                            style={{
+                              fontSize: "0.72rem",
+                              padding: "0.15rem 0.5rem",
+                              borderRadius: "999px",
+                              border: "1px solid hsl(var(--border))",
+                              backgroundColor: "hsl(var(--muted) / 0.4)",
+                              color: "hsl(var(--foreground))",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={l.district}
+                          >
+                            {l.name}
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditSheet(s)}
+                      style={{ gap: "0.3rem", fontSize: "0.75rem", whiteSpace: "nowrap" }}
+                    >
+                      <Pencil style={{ width: "13px", height: "13px" }} />
+                      Zuweisungen bearbeiten
+                    </Button>
+                  </div>
+
+                  {/* Mobile card */}
+                  <div
+                    className="flex flex-col gap-2 p-4 sm:hidden"
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <span style={{ fontSize: "0.9rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
+                        {s.lastname}, {s.firstname}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          fontWeight: 500,
+                          color,
+                          backgroundColor: bg,
+                          padding: "0.15rem 0.55rem",
+                          borderRadius: "999px",
+                        }}
+                      >
+                        {roleLabel(s.role)}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem" }}>
+                      {s.locations.length === 0 ? (
+                        <span style={{ fontSize: "0.78rem", color: "hsl(var(--muted-foreground))" }}>
+                          Kein Standort zugewiesen
+                        </span>
+                      ) : (
+                        s.locations.map((l) => (
+                          <span
+                            key={l.id}
+                            style={{
+                              fontSize: "0.72rem",
+                              padding: "0.15rem 0.5rem",
+                              borderRadius: "999px",
+                              border: "1px solid hsl(var(--border))",
+                              backgroundColor: "hsl(var(--muted) / 0.4)",
+                              color: "hsl(var(--foreground))",
+                            }}
+                          >
+                            {l.name}
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditSheet(s)}
+                      className="self-start"
+                      style={{ gap: "0.3rem", fontSize: "0.75rem" }}
+                    >
+                      <Pencil style={{ width: "13px", height: "13px" }} />
+                      Zuweisungen bearbeiten
+                    </Button>
                   </div>
                 </div>
               )
@@ -287,6 +449,68 @@ function CoordinatorTeamContent() {
       </main>
 
       <DashboardFooter />
+
+      {/* Location assignment sheet */}
+      <Sheet open={!!editingMember} onOpenChange={(open) => { if (!open) closeSheet() }}>
+        <SheetContent side="right" className="w-full sm:max-w-md flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Standorte bearbeiten</SheetTitle>
+            <SheetDescription>
+              {editingMember ? `${editingMember.firstname} ${editingMember.lastname}` : ""}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "1rem 0" }}>
+            {allLocations.length === 0 ? (
+              <p style={{ fontSize: "0.85rem", color: "hsl(var(--muted-foreground))" }}>
+                Laden...
+              </p>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {allLocations.map((loc) => (
+                  <label
+                    key={loc.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      cursor: "pointer",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "var(--radius)",
+                      border: "1px solid hsl(var(--border))",
+                      backgroundColor: selectedLocationIds.has(loc.id)
+                        ? "hsl(var(--muted) / 0.5)"
+                        : "transparent",
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedLocationIds.has(loc.id)}
+                      onCheckedChange={() => toggleLocation(loc.id)}
+                    />
+                    <div>
+                      <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "hsl(var(--foreground))" }}>
+                        {loc.name}
+                      </div>
+                      <div style={{ fontSize: "0.75rem", color: "hsl(var(--muted-foreground))" }}>
+                        {loc.district}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <SheetFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={closeSheet} disabled={isSaving} className="w-full sm:w-auto">
+              Abbrechen
+            </Button>
+            <Button onClick={handleSaveLocations} disabled={isSaving} className="w-full sm:w-auto">
+              {isSaving ? "Wird gespeichert..." : "Speichern"}
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

@@ -102,7 +102,7 @@ function CoordinatorShiftsContent() {
       {/* Header */}
       <DashboardHeader section="Koordinator" isLoading={isLoading} />
 
-      <main className="container mx-auto px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ flex: 1, position: "relative", zIndex: 1 }}>
 
         {loadError && (
           <div
@@ -139,7 +139,7 @@ function CoordinatorShiftsContent() {
         )}
 
         {/* Seitenüberschrift */}
-        <div style={{ marginBottom: "2rem", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3" style={{ marginBottom: "2rem" }}>
           <div>
             <h1
               style={{
@@ -159,6 +159,7 @@ function CoordinatorShiftsContent() {
           <Button
             size="sm"
             onClick={() => router.push("/coordinator/shifts/new")}
+            className="self-start sm:self-auto"
             style={{ gap: "0.4rem", fontSize: "0.8rem" }}
           >
             <Plus style={{ width: "14px", height: "14px" }} />

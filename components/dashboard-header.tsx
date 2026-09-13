@@ -71,7 +71,7 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
       />
 
       <div
-        className="container mx-auto px-6"
+        className="container mx-auto px-3 sm:px-6"
         style={{ position: "relative", zIndex: 3 }}
       >
         {/* Main row */}
@@ -162,9 +162,9 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
           </div>
         </div>
 
-        {/* Coordinator sub-nav */}
+        {/* Coordinator sub-nav — horizontally scrollable on mobile */}
         {isCoordinator && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem", paddingBottom: "0.5rem" }}>
+          <div className="overflow-x-auto" style={{ display: "flex", gap: "0.25rem", paddingBottom: "0.5rem" }}>
             {coordinatorNavLinks.map(({ href, label }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/")
               return (
@@ -181,6 +181,7 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
                     backgroundColor: isActive ? "rgba(255,255,255,0.18)" : "transparent",
                     border: isActive ? "1px solid rgba(255,255,255,0.3)" : "1px solid transparent",
                     transition: "all 0.15s",
+                    whiteSpace: "nowrap",
                   }}
                 >
                   {label}

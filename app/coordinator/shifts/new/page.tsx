@@ -133,7 +133,7 @@ function NewShiftContent() {
 
       <DashboardHeader section="Koordinator" isLoading={isLoading} />
 
-      <main className="container mx-auto px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
+      <main className="container mx-auto px-3 sm:px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
           <ArrowLeft className="h-4 w-4" />
           Zurück
