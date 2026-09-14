@@ -49,17 +49,23 @@ function extractErrorMessage(data: unknown, fallback: string) {
 
   if (typeof data === "object") {
     const anyData = data as any
+
+    // ASP.NET validation problem details: { title (error code), detail (message), errors: { Field: [..] } }
+    // Check field-level errors first — they are the most specific.
+    const errorsObj = anyData.errors ?? anyData.extensions?.errors
+    if (errorsObj && typeof errorsObj === "object") {
+      const allMessages: string[] = []
+      for (const val of Object.values(errorsObj)) {
+        if (Array.isArray(val)) allMessages.push(...val.map(String))
+        else if (typeof val === "string") allMessages.push(val)
+      }
+      if (allMessages.length > 0) return allMessages.join(" | ")
+    }
+
+    // detail is the human-readable description; title is often a machine code like "VALIDATION_ERROR"
+    if (typeof anyData.detail === "string" && anyData.detail.trim() && anyData.detail !== "Validation failed.") return anyData.detail
     if (typeof anyData.message === "string" && anyData.message.trim()) return anyData.message
     if (typeof anyData.title === "string" && anyData.title.trim()) return anyData.title
-
-    // ASP.NET validation problem details often have: { title, status, errors: { Field: [..] } }
-    if (anyData.errors && typeof anyData.errors === "object") {
-      const firstKey = Object.keys(anyData.errors)[0]
-      const firstVal = firstKey ? anyData.errors[firstKey] : null
-      if (Array.isArray(firstVal) && firstVal.length > 0) return String(firstVal[0])
-      if (typeof firstVal === "string") return firstVal
-      return "Validation failed"
-    }
   }
 
   return fallback
