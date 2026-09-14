@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
-import { apiPost, apiPut } from "@/lib/apiClient"
+import { apiPost } from "@/lib/apiClient"
 import type { CreateShiftRequest, ParticipantRole } from "@/lib/types"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { DashboardFooter } from "@/components/dashboard-footer"
@@ -48,7 +48,7 @@ function NewShiftContent() {
 
   const hasLeader = participants.some((p) => p.role === "Leader")
 
-  async function handleSubmit(e: React.FormEvent, shouldPublish: boolean) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
     if (!hasLeader) {
@@ -75,20 +75,12 @@ function NewShiftContent() {
         participants,
       }
 
-      const createdEinsatz = await apiPost<{ id: string }>("/api/shifts", payload)
+      await apiPost<{ id: string }>("/api/shifts", payload)
 
-      if (shouldPublish && createdEinsatz.id) {
-        await apiPut(`/api/shifts/${createdEinsatz.id}/approve`)
-        toast({
-          title: "Einsatz genehmigt",
-          description: "Der Einsatz wurde erstellt und direkt genehmigt.",
-        })
-      } else {
-        toast({
-          title: "Entwurf gespeichert",
-          description: "Der Einsatz wurde als Entwurf gespeichert.",
-        })
-      }
+      toast({
+        title: "Entwurf gespeichert",
+        description: "Der Einsatz wurde als Entwurf gespeichert. Der Leader kann ihn nun übernehmen.",
+      })
 
       router.push("/coordinator/shifts")
     } catch (error) {
@@ -245,20 +237,11 @@ function NewShiftContent() {
               <div className="flex gap-3 pt-4">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={(e) => handleSubmit(e, false)}
+                  onClick={(e) => handleSubmit(e)}
                   disabled={!isFormValid || isLoading}
                   className="flex-1"
                 >
-                  Als Entwurf speichern
-                </Button>
-                <Button
-                  type="button"
-                  onClick={(e) => handleSubmit(e, true)}
-                  disabled={!isFormValid || isLoading}
-                  className="flex-1"
-                >
-                  {isLoading ? "Wird erstellt..." : "Speichern & Veröffentlichen"}
+                  {isLoading ? "Wird erstellt..." : "Einsatz erstellen"}
                 </Button>
               </div>
             </form>

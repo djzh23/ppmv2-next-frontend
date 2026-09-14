@@ -30,7 +30,8 @@ function FestmitarbeiterInboxContent() {
     setLoadError(null)
     try {
       const data = await apiGet<ShiftSummary[]>("/api/shifts")
-      setShifts(data)
+      // Draft shifts are managed by the Leader in the leader inbox — not visible here.
+      setShifts(data.filter((s) => s.status !== "Draft"))
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Einsätze konnten nicht geladen werden.")
       setShifts([])
