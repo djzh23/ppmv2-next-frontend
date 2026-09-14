@@ -2,7 +2,7 @@
 
 This is the web frontend for **PPM V2**, a shift and team management system built on a .NET REST API.
 
-The backend is designed to be client-agnostic — this Next.js app is one possible client, chosen for rapid prototyping and to demonstrate modern frontend development alongside the .NET backend. A future client is planned as a .NET MAUI Blazor Hybrid app.
+The backend is designed to be client-agnostic. This Next.js app is one possible client, chosen for rapid prototyping and to demonstrate modern frontend development alongside the .NET backend. A future client is planned as a .NET MAUI Blazor Hybrid app.
 
 ## Screenshots
 
