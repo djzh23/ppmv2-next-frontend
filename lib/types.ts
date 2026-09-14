@@ -115,6 +115,8 @@ export interface AvailableStaff {
   firstname: string
   lastname: string
   role: UserRoleName
+  hasConflict: boolean
+  locations?: { id: string; name: string; district: string }[]
 }
 
 // Returned by GET /api/users/me

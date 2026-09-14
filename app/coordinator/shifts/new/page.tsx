@@ -234,8 +234,10 @@ function NewShiftContent() {
               <LocationSelect value={locationId} onChange={setLocationId} required />
 
               <ParticipantPicker
-                locationId={locationId}
-                date={startDate}
+                startDate={startDate}
+                startTime={startTime}
+                endDate={endDate}
+                endTime={endTime}
                 value={participants}
                 onChange={setParticipants}
               />

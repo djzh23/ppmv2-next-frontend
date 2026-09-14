@@ -12,39 +12,39 @@ interface Participant {
 }
 
 interface ParticipantPickerProps {
-  locationId: string
-  date: string // YYYY-MM-DD
+  startDate: string  // YYYY-MM-DD
+  startTime: string  // HH:mm
+  endDate: string    // YYYY-MM-DD
+  endTime: string    // HH:mm
   value: Participant[]
   onChange: (participants: Participant[]) => void
 }
 
-export function ParticipantPicker({ locationId, date, value, onChange }: ParticipantPickerProps) {
+export function ParticipantPicker({ startDate, startTime, endDate, endTime, value, onChange }: ParticipantPickerProps) {
   const [staff, setStaff] = useState<AvailableStaff[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const canLoad = !!locationId && !!date
+  const canLoad = !!startDate && !!startTime && !!endDate && !!endTime
 
   useEffect(() => {
     if (!canLoad) {
       setStaff([])
-      onChange([])
       return
     }
     loadStaff()
-  }, [locationId, date])
+  }, [startDate, startTime, endDate, endTime])
 
   async function loadStaff() {
     setIsLoading(true)
     setLoadError(null)
     try {
+      const startAt = new Date(`${startDate}T${startTime}`).toISOString()
+      const endAt = new Date(`${endDate}T${endTime}`).toISOString()
       const data = await apiGet<AvailableStaff[]>(
-        `/api/locations/${locationId}/available-staff?date=${date}`
+        `/api/users/staff?startAt=${encodeURIComponent(startAt)}&endAt=${encodeURIComponent(endAt)}`
       )
       setStaff(data)
-      // Remove participants who are no longer available
-      const availableIds = new Set(data.map((s) => s.userId))
-      onChange(value.filter((p) => availableIds.has(p.userId)))
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "Mitarbeiter konnten nicht geladen werden.")
       setStaff([])
@@ -96,13 +96,13 @@ export function ParticipantPicker({ locationId, date, value, onChange }: Partici
 
       {!canLoad && (
         <p style={{ fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", padding: "0.5rem 0" }}>
-          Zuerst Standort und Datum wählen.
+          Zuerst Start- und Enddatum/-zeit wählen.
         </p>
       )}
 
       {canLoad && isLoading && (
         <p style={{ fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", padding: "0.5rem 0" }}>
-          Lade verfügbare Mitarbeiter...
+          Lade Mitarbeiter...
         </p>
       )}
 
@@ -121,7 +121,7 @@ export function ParticipantPicker({ locationId, date, value, onChange }: Partici
 
       {canLoad && !isLoading && !loadError && staff.length === 0 && (
         <p style={{ fontSize: "0.82rem", color: "hsl(var(--muted-foreground))", padding: "0.5rem 0" }}>
-          Keine verfügbaren Mitarbeiter für diesen Standort und Tag.
+          Keine Mitarbeiter gefunden.
         </p>
       )}
 
@@ -157,21 +157,36 @@ export function ParticipantPicker({ locationId, date, value, onChange }: Partici
                   style={{ width: "16px", height: "16px", cursor: "pointer", flexShrink: 0 }}
                 />
 
-                {/* Name + Role label */}
+                {/* Name + Role label + conflict badge */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontSize: "0.85rem",
-                      fontWeight: selected ? 500 : 400,
-                      color: selected ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
-                      display: "block",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {s.firstname} {s.lastname}
-                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                    <span
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: selected ? 500 : 400,
+                        color: selected ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {s.firstname} {s.lastname}
+                    </span>
+                    {s.hasConflict && (
+                      <span style={{
+                        fontSize: "0.65rem",
+                        fontWeight: 500,
+                        padding: "0.05rem 0.35rem",
+                        borderRadius: "9999px",
+                        backgroundColor: "#fef3c7",
+                        color: "#92400e",
+                        border: "1px solid #fcd34d",
+                        whiteSpace: "nowrap",
+                      }}>
+                        Bereits eingeteilt
+                      </span>
+                    )}
+                  </div>
                   <span style={{ fontSize: "0.72rem", color: "hsl(var(--muted-foreground))" }}>
                     {s.role}
                   </span>
@@ -200,10 +215,15 @@ export function ParticipantPicker({ locationId, date, value, onChange }: Partici
         </div>
       )}
 
-      {/* Leader warning */}
+      {/* Validation hints */}
       {selectedCount > 0 && leaderCount === 0 && (
         <p style={{ fontSize: "0.78rem", color: "hsl(var(--destructive))", marginTop: "0.25rem" }}>
           Bitte mindestens einen Leader auswählen.
+        </p>
+      )}
+      {selectedCount > 0 && leaderCount > 1 && (
+        <p style={{ fontSize: "0.78rem", color: "hsl(var(--destructive))", marginTop: "0.25rem" }}>
+          Nur ein Leader pro Einsatz erlaubt.
         </p>
       )}
     </div>

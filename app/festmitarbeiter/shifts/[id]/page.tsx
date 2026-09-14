@@ -184,15 +184,14 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
     setSelectedRole(ParticipantRole.Member)
     setLoadingStaff(true)
     try {
-      const date = new Date(shift.startAtUtc)
-      const dateStr = date.toISOString().split("T")[0]
-      const locationId = shift.location?.id ?? ""
+      const startAt = encodeURIComponent(new Date(shift.startAtUtc).toISOString())
+      const endAt = encodeURIComponent(shift.endAtUtc ? new Date(shift.endAtUtc).toISOString() : new Date(shift.startAtUtc).toISOString())
       const staff = await apiGet<AvailableStaff[]>(
-        `/api/locations/${locationId}/available-staff?date=${dateStr}`
+        `/api/users/staff?startAt=${startAt}&endAt=${endAt}`
       )
       // Filter out existing participants
-      const existingIds = new Set(shift.participants.map((p) => p.userId))
-      setAvailableStaff(staff.filter((s) => !existingIds.has(s.userId)))
+      const existingIds = new Set(shift.participants.map((p) => p.userId.toLowerCase()))
+      setAvailableStaff(staff.filter((s) => !existingIds.has(s.userId.toLowerCase())))
     } catch {
       toast({ title: "Mitarbeiter konnten nicht geladen werden.", variant: "destructive" })
       setShowAddParticipant(false)
@@ -572,7 +571,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
                   <option value="">Bitte auswählen...</option>
                   {availableStaff.map((s) => (
                     <option key={s.userId} value={s.userId}>
-                      {s.lastname}, {s.firstname}
+                      {s.lastname}, {s.firstname}{s.hasConflict ? " ⚠ Bereits eingeteilt" : ""}
                     </option>
                   ))}
                 </select>
