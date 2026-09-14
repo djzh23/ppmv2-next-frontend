@@ -4,37 +4,11 @@ This is the web frontend for **PPM V2**, a shift and team management system buil
 
 The backend is designed to be client-agnostic. This Next.js app is one possible client, chosen for rapid prototyping and to demonstrate modern frontend development alongside the .NET backend. A future client is planned as a .NET MAUI Blazor Hybrid app.
 
-## Screenshots
+**Live Demo:** [ppmv2.vercel.app](https://ppmv2.vercel.app)
+**API:** [ppmv2-hbb4.onrender.com](https://ppmv2-hbb4.onrender.com)
+**Backend repo:** [PpmV2](https://github.com/djzh23/PpmV2) (.NET 10, Clean Architecture)
 
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="public/screenshots/Home-Login-ppm.png" alt="Landing Page" width="100%" />
-      <sub><b>Landing Page</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="public/screenshots/Admin-Dashboard-1-ppm.png" alt="Admin User Management" width="100%" />
-      <sub><b>Admin: User Management</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="public/screenshots/Admin-Dashboard-2-ppm.png" alt="Admin Role Overview" width="100%" />
-      <sub><b>Admin: Role Overview</b></sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="public/screenshots/coordinator-shifts.png" alt="Coordinator Shifts" width="100%" />
-      <sub><b>Coordinator: Shifts</b></sub>
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <img src="public/screenshots/festmiatbeiter-shifts.png" alt="Staff Shift Inbox" width="100%" />
-      <sub><b>Staff: Shift Inbox</b></sub>
-    </td>
-    <td align="center"></td>
-  </tr>
-</table>
+---
 
 ## Shift Workflow
 
@@ -46,28 +20,31 @@ The frontend reflects a multi-role shift planning flow:
 4. Once **all members accept**, the shift auto-transitions to `Planned`.
 5. **Coordinator** sees the assembled team and starts the shift (`Active`), then eventually completes it.
 
-### What Is Pending / To Be Improved
-
-- **Remove participant:** Leader can add members but not yet remove them
-- **Decline with reason:** members should be able to provide a reason when declining, visible to the Leader and Coordinator
-- **Handling declined members:** when someone declines, the Leader needs to be notified and able to replace them before the shift can reach Planned
-- **Notifications:** in-app alerts for shift assignment, proposals, acceptances, and declines
-- **Coordinator shift detail:** clearer per-status action buttons (Start, Complete, Cancel) with confirmation dialogs
-- **Coordinator-as-Leader flow:** edge case validation when the Coordinator assigns themselves as Leader
+---
 
 ## Features
+
+- **Role-based access control** with four user roles: Admin, Coordinator, Festmitarbeiter, Honorarkraft
+- **Shift workflow** from Draft to Planned, Active, Completed, or Cancelled
+- **User management** with admin approval and role assignment
+- **Coordinator dashboard** to create shifts and assign a Leader
+- **Leader inbox** to manage Draft shifts, add team members, and propose
+- **Staff inbox** for invited members to accept or decline assignments
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 16 (App Router) |
+| Framework | Next.js 15 (App Router) |
 | Language | TypeScript 5 |
 | UI | shadcn/ui, Radix UI |
 | Styling | Tailwind CSS |
-| Forms | React Hook Form + Zod |
 | Auth | JWT (Bearer token) |
 | Deployment | Vercel |
+
+---
 
 ## Local Development
 
@@ -99,9 +76,12 @@ The app connects to the live API by default if the variable is not set. Demo acc
 | `fest1@test.com` | Festmitarbeiter |
 | `hon1@test.com` | Honorarkraft |
 
+---
+
 ## Roadmap
 
+- Notifications: in-app alerts for shift assignments, proposals, and responses
+- Decline with reason: optional message when a member declines a shift
+- Remove participant: Leader can remove members from a Draft shift
 - Replace JWT localStorage auth with BFF pattern and HttpOnly cookies
-- Availability-based dropdowns for location and leader selection
-- Conflict handling (409) for overlapping shift assignments
 - .NET MAUI Blazor Hybrid client as the primary production frontend
