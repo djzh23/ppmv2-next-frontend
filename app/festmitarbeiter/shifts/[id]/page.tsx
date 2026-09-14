@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { apiGet, apiPost, apiPut } from "@/lib/apiClient"
-import { getAuthUser } from "@/lib/auth"
+import { getAuthUser, getUserRole } from "@/lib/auth"
 import type { ShiftDetails, ConfirmationStatus, AvailableStaff } from "@/lib/types"
 import { participantDisplayName, ParticipantRole } from "@/lib/types"
 import { StatusBadge } from "@/components/status-badge"
@@ -40,7 +40,7 @@ import {
 export default function FestmitarbeiterShiftDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   return (
-    <RoleGuard allowedRoles={["Festmitarbeiter"]}>
+    <RoleGuard allowedRoles={["Festmitarbeiter", "Honorarkraft"]}>
       <FestmitarbeiterShiftDetailsContent shiftId={id} />
     </RoleGuard>
   )
@@ -86,6 +86,8 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const [isResponding, setIsResponding] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const user = getAuthUser()
+  const userRole = getUserRole()
+  const section = userRole === "Honorarkraft" ? "Honorarkraft" : "Festmitarbeiter"
 
   // Add participant dialog state
   const [showAddParticipant, setShowAddParticipant] = useState(false)
@@ -224,7 +226,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   if (isLoading) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <DashboardHeader section="Festmitarbeiter" isLoading />
+        <DashboardHeader section={section} isLoading />
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
         </div>
@@ -236,7 +238,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   if (!shift) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
-        <DashboardHeader section="Festmitarbeiter" />
+        <DashboardHeader section={section} />
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "hsl(var(--muted-foreground))" }}>
           Einsatz nicht gefunden
         </div>
@@ -245,10 +247,16 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
     )
   }
 
-  const myParticipant = shift.participants.find((p) => p.userId === user?.userId)
+  const myParticipant = shift.participants.find(
+    (p) => p.userId.toLowerCase() === user?.userId?.toLowerCase()
+  )
   const isLeader = myParticipant?.role === "Leader"
   const canModify = shift.status === "Draft" || shift.status === "PendingApproval"
   const isBusy = isProposing || isResponding || isCancelling
+  const hasAnyAction =
+    (isLeader && canModify) ||
+    (myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval") ||
+    shift.status === "Draft"
 
   return (
     <div
@@ -277,7 +285,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
         }}
       />
 
-      <DashboardHeader section="Festmitarbeiter" isLoading={isLoading || isBusy} />
+      <DashboardHeader section={section} isLoading={isLoading || isBusy} />
 
       <main className="container mx-auto px-3 sm:px-6 py-8" style={{ position: "relative", zIndex: 1, flex: 1 }}>
         <Button variant="ghost" onClick={() => router.back()} className="mb-4" style={{ gap: "0.4rem", fontSize: "0.85rem" }}>
@@ -494,7 +502,27 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
             <Card className="bg-green-50 border-green-200">
               <CardContent className="pt-6">
                 <p className="text-center text-green-800 font-medium">
-                  Du nimmst an diesem aktiven Einsatz teil
+                  {isLeader ? "Du leitest diesen aktiven Einsatz als Leader" : "Du nimmst an diesem aktiven Einsatz teil"}
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {isLeader && shift.status === "Planned" && (
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="pt-6">
+                <p className="text-center text-blue-800 font-medium">
+                  Du bist der Leader dieses geplanten Einsatzes
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {myParticipant && !hasAnyAction && shift.status !== "Active" && shift.status !== "Planned" && (
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground" style={{ fontSize: "0.85rem" }}>
+                  Keine Aktionen verfügbar für Status: {shift.status}
                 </p>
               </CardContent>
             </Card>

@@ -137,7 +137,9 @@ function LeaderShiftDetailsContent({ shiftId }: { shiftId: string }) {
     )
   }
 
-  const myParticipant = shift.participants.find((p) => p.userId === user?.userId)
+  const myParticipant = shift.participants.find(
+    (p) => p.userId.toLowerCase() === user?.userId?.toLowerCase()
+  )
 
   return (
     <div
