@@ -254,8 +254,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
   const isBusy = isProposing || isResponding || isCancelling
   const hasAnyAction =
     (isLeader && canModify) ||
-    (myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval") ||
-    shift.status === "Draft"
+    (myParticipant?.confirmationStatus === "Invited" && shift.status === "PendingApproval")
 
   return (
     <div
@@ -408,7 +407,7 @@ function FestmitarbeiterShiftDetailsContent({ shiftId }: { shiftId: string }) {
             </Card>
           )}
 
-          {shift.status === "Draft" && (
+          {isLeader && shift.status === "Draft" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button disabled={isBusy} className="w-full" size="lg">
