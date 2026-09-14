@@ -36,13 +36,26 @@ The backend is designed to be client-agnostic — this Next.js app is one possib
   </tr>
 </table>
 
-## Features
+## Shift Workflow
 
-- **Role-based access control** with four user roles: Admin, Coordinator, Festmitarbeiter, Honorarkraft
-- **Shift workflow** from Draft to Planned, Active, Completed, or Cancelled
-- **User management** with admin approval and role assignment
-- **Coordinator dashboard** to create and publish shifts with leader assignment
-- **Staff inbox** for assigned users to view and accept their shifts
+The frontend reflects a multi-role shift planning flow:
+
+1. **Coordinator** creates a shift (title, time, location) and assigns a Festmitarbeiter as Leader. The shift is saved as `Draft`. The Coordinator can also assign themselves as Leader.
+2. **Leader** sees the Draft shift in their Leader Inbox, adds team members from available staff, and proposes the team when ready.
+3. **Team members** receive the shift invitation (`PendingApproval`) and can accept or decline.
+4. Once **all members accept**, the shift auto-transitions to `Planned`.
+5. **Coordinator** sees the assembled team and starts the shift (`Active`), then eventually completes it.
+
+### What Is Pending / To Be Improved
+
+- **Remove participant:** Leader can add members but not yet remove them
+- **Decline with reason:** members should be able to provide a reason when declining, visible to the Leader and Coordinator
+- **Handling declined members:** when someone declines, the Leader needs to be notified and able to replace them before the shift can reach Planned
+- **Notifications:** in-app alerts for shift assignment, proposals, acceptances, and declines
+- **Coordinator shift detail:** clearer per-status action buttons (Start, Complete, Cancel) with confirmation dialogs
+- **Coordinator-as-Leader flow:** edge case validation when the Coordinator assigns themselves as Leader
+
+## Features
 
 ## Tech Stack
 
