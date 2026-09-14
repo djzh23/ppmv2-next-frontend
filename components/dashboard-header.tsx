@@ -24,6 +24,7 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
   const colors = (role && roleColorSchemes[role]) ? roleColorSchemes[role] : defaultColorScheme
   const pathname = usePathname()
   const isCoordinator = role === "Coordinator"
+  const isFestOrHonor = role === "Festmitarbeiter" || role === "Honorarkraft"
 
   return (
     <header
@@ -166,6 +167,38 @@ export function DashboardHeader({ section, isLoading }: DashboardHeaderProps) {
         {isCoordinator && (
           <div className="overflow-x-auto" style={{ display: "flex", gap: "0.25rem", paddingBottom: "0.5rem" }}>
             {coordinatorNavLinks.map(({ href, label }) => {
+              const isActive = pathname === href || pathname.startsWith(href + "/")
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? "#ffffff" : "rgba(255,255,255,0.65)",
+                    textDecoration: "none",
+                    padding: "0.2rem 0.65rem",
+                    borderRadius: "999px",
+                    backgroundColor: isActive ? "rgba(255,255,255,0.18)" : "transparent",
+                    border: isActive ? "1px solid rgba(255,255,255,0.3)" : "1px solid transparent",
+                    transition: "all 0.15s",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {label}
+                </Link>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Festmitarbeiter/Honorarkraft sub-nav */}
+        {isFestOrHonor && (
+          <div className="overflow-x-auto" style={{ display: "flex", gap: "0.25rem", paddingBottom: "0.5rem" }}>
+            {[
+              { href: role === "Honorarkraft" ? "/honorarkraft/inbox" : "/festmitarbeiter/inbox", label: "Meine Einsätze" },
+              { href: "/leader/inbox", label: "Leader Inbox" },
+            ].map(({ href, label }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/")
               return (
                 <Link
